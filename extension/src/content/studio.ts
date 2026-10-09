@@ -937,6 +937,7 @@ function mount(): void {
     style.textContent = css;
     shadow.appendChild(style);
     root = document.createElement('div');
+    root.className = 'wrap';
     shadow.appendChild(root);
     root.addEventListener('click', (e) => void onClick(e));
   }
