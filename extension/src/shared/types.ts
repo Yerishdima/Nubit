@@ -331,7 +331,8 @@ export type QuickActionId =
   | 'studio_compare'
   | 'studio_magic_fill'
   | 'studio_thumbnail'
-  | 'daily_ideas';
+  | 'daily_ideas'
+  | 'studio_topic';
 
 // ---- Messaging ----------------------------------------------------------
 

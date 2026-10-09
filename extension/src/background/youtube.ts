@@ -214,8 +214,9 @@ export class YouTube {
   }
 
   /** Search through the public results page only (no API quota). */
-  async searchPage(query: string, maxResults = 20): Promise<ListVideo[]> {
-    const html = await this.fetchHtml(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
+  async searchPage(query: string, maxResults = 20, order: 'relevance' | 'date' | 'viewCount' = 'relevance'): Promise<ListVideo[]> {
+    const sp = order === 'date' ? '&sp=CAI%253D' : order === 'viewCount' ? '&sp=CAM%253D' : '';
+    const html = await this.fetchHtml(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}${sp}`);
     const data = extractJsonVar(html, 'ytInitialData');
     if (!data) throw new YouTubeError('Could not parse search results page');
     return searchResultsFromData(data).slice(0, maxResults);

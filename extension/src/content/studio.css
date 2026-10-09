@@ -148,3 +148,12 @@ table.cmp td.num { text-align: right; white-space: nowrap; color: var(--nb-fg2);
 .toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--nb-fg); color: var(--nb-bg); padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: .95; }
 ol.fixes { margin: 4px 0; padding-left: 18px; }
+.verdict { border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 12px; background: var(--nb-bg2); }
+.verdict.good { background: rgba(22,163,74,.12); color: var(--nb-good); }
+.verdict.warn { background: rgba(217,119,6,.12); color: var(--nb-warn); }
+.verdict.bad { background: rgba(220,38,38,.12); color: var(--nb-bad); }
+ul.now { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }
+ul.now li { margin: 2px 0; }
+ul.now a { color: var(--nb-fg); text-decoration: none; }
+ul.now .m { color: var(--nb-fg2); margin-left: 4px; font-size: 11px; }
+ul.now .m b { color: var(--nb-good); }

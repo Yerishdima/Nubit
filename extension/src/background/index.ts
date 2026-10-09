@@ -295,6 +295,7 @@ function actionLabel(action: QuickActionId, s: Settings): string {
     studio_magic_fill: ['Заполнить всё', 'Magic fill'],
     studio_thumbnail: ['Оценка превью', 'Thumbnail review'],
     daily_ideas: ['Идеи дня', 'Daily ideas'],
+    studio_topic: ['Что набирает по теме сейчас', 'What works on the topic now'],
   };
   return labels[action][ru ? 0 : 1];
 }

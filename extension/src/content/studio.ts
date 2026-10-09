@@ -4,7 +4,7 @@ import type { Lang, PageContext, PanelEvent, PanelRequest, QuickActionId, Runtim
 import type { KeywordReport } from '../background/keyword.ts';
 import { loadSettings, onSettingsChanged, providerReady, saveSettings } from '../shared/settings.ts';
 import type { ImageAttachment } from '../shared/types.ts';
-import { formatCompact, setLang } from '../shared/i18n.ts';
+import { formatAge, formatCompact, setLang } from '../shared/i18n.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 import { guessFocusKeyword, seoScore, titleScore } from '../shared/metrics.ts';
 import css from './studio.css';
@@ -86,6 +86,22 @@ const L = {
     compare_hint: 'ИИ найдёт топ‑видео по вашему запросу и скажет, насколько название выделится, что поправить и предложит альтернативы.',
     magic_hint: 'Одна кнопка: ИИ заполнит название, описание и теги на основе черновика и спроса. Всё можно отредактировать.',
     comp_need_kw: 'Сначала проверьте спрос по ключевому запросу (вкладка IQ).',
+    gen_topic: '🔥 Что снять по теме сейчас',
+    now_working: 'Сейчас набирают',
+    verdict_hot: 'Тема живая: свежие видео набирают, спрос есть.',
+    verdict_ok: 'Тема рабочая: спрос есть, нужен свой угол.',
+    verdict_hard: 'Спрос есть, но топ занят сильными каналами — нужен узкий угол.',
+    verdict_cold: 'Спрос слабый или тема остыла — проверьте смежные запросы.',
+    auto_checking: 'анализирую тему…',
+    demand_label: 'спрос',
+    comp_label: 'конкуренция',
+    fresh_label: 'свежих в топе',
+    topic_verdict: 'Вывод',
+    topic_now: 'Что сейчас работает',
+    topic_title: 'Название под текущий спрос',
+    topic_format: 'Формат',
+    topic_avoid: 'Чего избегать',
+    topic_related: 'Смежные запросы',
   },
   en: {
     title: 'Nubit · optimization',
@@ -154,6 +170,22 @@ const L = {
     compare_hint: 'The AI finds the top videos for your keyword and tells how much your title stands out, what to fix, and proposes alternatives.',
     magic_hint: 'One click: the AI fills in the title, description and tags from the draft and demand data. Everything stays editable.',
     comp_need_kw: 'Check demand for the focus keyword first (IQ tab).',
+    gen_topic: '🔥 What to make on this topic now',
+    now_working: 'Gaining traffic now',
+    verdict_hot: 'Live topic: fresh videos are gaining, demand is there.',
+    verdict_ok: 'Workable topic: demand exists, you need your own angle.',
+    verdict_hard: 'Demand exists but the top is held by strong channels — pick a narrow angle.',
+    verdict_cold: 'Weak or cooling demand — check adjacent queries.',
+    auto_checking: 'analyzing the topic…',
+    demand_label: 'demand',
+    comp_label: 'competition',
+    fresh_label: 'fresh in the top',
+    topic_verdict: 'Verdict',
+    topic_now: 'What works now',
+    topic_title: 'Title for current demand',
+    topic_format: 'Format',
+    topic_avoid: 'Avoid',
+    topic_related: 'Related queries',
   },
 } as const;
 
@@ -441,6 +473,20 @@ function render(): void {
   updateTitleBadge(sc);
 }
 
+function verdictClass(r: KeywordReport): string {
+  if (r.demand >= 55 && r.competition < 65) return 'good';
+  if (r.demand >= 35) return 'warn';
+  return 'bad';
+}
+
+function verdictText(r: KeywordReport): string {
+  const fresh = r.recentShare >= 0.3 || (r.recent?.length ?? 0) >= 3;
+  if (r.demand >= 55 && r.competition < 65 && fresh) return t('verdict_hot');
+  if (r.demand >= 35 && r.competition >= 65) return t('verdict_hard');
+  if (r.demand >= 35) return t('verdict_ok');
+  return t('verdict_cold');
+}
+
 function aiButton(action: QuickActionId, label: Keys, ready: boolean, primary = true): string {
   return `<button class="btn ${primary ? 'primary' : ''}" data-act="ai" data-val="${action}" ${!ready || state.running ? 'disabled' : ''}>${t(label)}</button>`;
 }
@@ -472,14 +518,25 @@ function toolBody(tool: ToolId, sc: Scores, ready: boolean): string {
         <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || '…')}" />
           <button class="btn" data-act="check" ${!kw || state.reportLoading ? 'disabled' : ''}>${state.reportLoading ? t('checking') : t('check')}</button></div>
         ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ''}
+        ${state.reportLoading && !r ? `<div class="muted" style="margin-top:4px">${t('auto_checking')}</div>` : ''}
         ${
           r
-            ? `${meter(t('demand'), r.demand)}${meter(t('competition'), r.competition)}
-               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t('exact')}${r.medianViews ? ` · ${formatCompact(r.medianViews)} views median` : ''}</div>
+            ? `<div class="verdict ${verdictClass(r)}">${verdictText(r)}</div>
+               ${meter(t('demand'), r.demand)}${meter(t('competition'), r.competition)}
+               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t('exact')} · ${Math.round(r.recentShare * 100)}% ${t('fresh_label')}${r.medianViews ? ` · ${formatCompact(r.medianViews)} views median` : ''}</div>
+               ${
+                 r.recent?.length
+                   ? `<div class="muted" style="margin-top:8px">${t('now_working')}:</div><ul class="now">${r.recent
+                       .slice(0, 5)
+                       .map((v) => `<li><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" rel="noopener">${escapeHtml(v.title.slice(0, 64))}${v.title.length > 64 ? '…' : ''}</a><span class="m">${formatCompact(v.views)} · ${formatAge(v.ageHours)} · <b>${formatCompact(v.vph)}/${t('chars') === 'симв.' ? 'ч' : 'h'}</b></span></li>`)
+                       .join('')}</ul>`
+                   : ''
+               }
                ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t('suggestions')}:</div><div class="chips">${r.suggestions.slice(0, 12).map((x) => chip(x, 'addtag', '', existing.has(x.toLowerCase()))).join('')}</div>` : ''}`
             : ''
         }
-      </div>`;
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_topic', 'gen_topic', ready)}</div>${resultHtml('studio_topic', state.ai.studio_topic, existing)}</div>`;
     }
     case 'titles': {
       const titleWords = d.title.split(/\s+/).filter(Boolean).length;
@@ -590,6 +647,19 @@ function resultHtml(action: QuickActionId, r: AiResult | undefined, existing: Se
     return `<div class="result"><div class="row"><span class="muted">${tags.length} ${t('tagsCount')} · ${tags.join(', ').length} ${t('chars')}</span><span style="flex:1"></span><button class="btn small primary" data-act="addtags" data-val="${escapeHtml(JSON.stringify(tags))}">${t('addAll')}</button></div>
       <div class="chips">${tags.map((x: string) => chip(x, 'addtag', '', existing.has(x.toLowerCase()))).join('')}</div></div>`;
   }
+  if (action === 'studio_topic' && (p.verdict || p.now_working)) {
+    const list = (title: string, arr: Any) => (Array.isArray(arr) && arr.length ? `<div class="muted" style="margin-top:6px">${title}:</div><ol class="fixes">${arr.map((x: Any) => `<li>${escapeHtml(typeof x === 'string' ? x : `${x.angle ?? ''} — ${x.why ?? ''}`)}</li>`).join('')}</ol>` : '');
+    const lvl = (v: Any) => (v === 'high' ? 'good' : v === 'medium' ? 'warn' : 'bad');
+    return `<div class="result">
+      <div class="row">${p.demand_now ? `<span class="pill ${lvl(p.demand_now)}">${t('demand_label')}: ${escapeHtml(String(p.demand_now))}</span>` : ''}${p.competition ? `<span class="pill ${p.competition === 'low' ? 'good' : p.competition === 'medium' ? 'warn' : 'bad'}">${t('comp_label')}: ${escapeHtml(String(p.competition))}</span>` : ''}</div>
+      <div style="margin-top:6px"><b>${t('topic_verdict')}:</b> ${escapeHtml(String(p.verdict ?? ''))}</div>
+      ${list(t('topic_now'), p.now_working)}
+      ${p.recommended_title ? `<div class="item"><div class="t"><div class="a">${t('topic_title')}</div>${escapeHtml(String(p.recommended_title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.recommended_title))}">${t('insert')}</button></div>` : ''}
+      ${p.best_format ? `<div class="muted" style="margin-top:4px"><b>${t('topic_format')}:</b> ${escapeHtml(String(p.best_format))}</div>` : ''}
+      ${list(t('topic_avoid'), p.avoid)}
+      ${Array.isArray(p.related_topics) && p.related_topics.length ? `<div class="muted" style="margin-top:6px">${t('topic_related')}:</div><div class="chips">${p.related_topics.map((x: Any) => chip(String(x), 'addtag', '', existing.has(String(x).toLowerCase()))).join('')}</div>` : ''}
+    </div>`;
+  }
   if (action === 'studio_magic_fill' && (p.title || p.description || p.tags)) {
     return `<div class="result"><div class="muted">${t('magicDone')}</div>${p.title ? `<div class="item"><div class="t">${escapeHtml(String(p.title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.title))}">${t('insert')}</button></div>` : ''}</div>`;
   }
@@ -635,6 +705,7 @@ async function checkKeyword(): Promise<void> {
     state.report = res;
     state.reportFor = kw;
     state.compTags = undefined;
+    if (!activeTool) activeTool = 'score';
   } catch (err) {
     state.reportError = err instanceof Error ? err.message : String(err);
   } finally {
@@ -926,6 +997,17 @@ function refreshDraft(): void {
   state.draft = d;
   if (!state.focusEdited) state.focusKeyword = guessFocusKeyword(d.title);
   if (!kwInputFocused) render();
+  scheduleAutoCheck();
+}
+
+// Proactive topic analysis: when the focus keyword has settled for a moment, check demand without a click.
+let autoTimer: number | undefined;
+function scheduleAutoCheck(): void {
+  clearTimeout(autoTimer);
+  autoTimer = window.setTimeout(() => {
+    const kw = state.focusKeyword.trim();
+    if (kw.length >= 3 && kw !== state.reportFor && !state.reportLoading) void checkKeyword();
+  }, 2500);
 }
 
 function mount(): void {

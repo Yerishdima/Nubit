@@ -6,15 +6,21 @@ import type { YouTube } from './youtube.ts';
 export interface KeywordReport extends KeywordAnalysis {
   suggestions: string[];
   topResults: ListVideo[];
+  /** Recently published videos on the topic, ranked by views per hour — what is gaining traffic right now. */
+  recent: ListVideo[];
 }
 
 export async function keywordReport(youtube: YouTube, query: string, lang: Lang, maxResults = 20): Promise<KeywordReport> {
-  const [results, suggestions] = await Promise.all([
+  const [results, suggestions, byDate] = await Promise.all([
     youtube.search(query, maxResults, 'relevance'),
     youtube.suggestions(query, lang).catch(() => [] as string[]),
+    youtube.searchPage(query, 20, 'date').catch(() => [] as ListVideo[]),
   ]);
   const a = analyzeKeyword(query, results);
-  return { ...a, suggestions, topResults: results.slice(0, 12) };
+  const pool = new Map<string, ListVideo>();
+  for (const v of [...byDate, ...results]) if (v.ageHours !== undefined && v.ageHours <= 24 * 45 && v.vph !== undefined && !pool.has(v.videoId)) pool.set(v.videoId, v);
+  const recent = [...pool.values()].sort((x, y) => (y.vph ?? 0) - (x.vph ?? 0)).slice(0, 8);
+  return { ...a, suggestions, topResults: results.slice(0, 12), recent };
 }
 
 /** Tags (keywords) of the given videos, read from their watch pages. */

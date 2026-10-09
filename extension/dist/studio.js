@@ -46,8 +46,8 @@
     const stored = await chrome.storage.local.get(KEY);
     const s = stored[KEY] ?? {};
     const merged = { ...DEFAULT_SETTINGS, ...s };
-    const names = new Set(merged.localTools.map((t2) => t2.name));
-    for (const t2 of DEFAULT_LOCAL_TOOLS) if (!names.has(t2.name)) merged.localTools.push({ ...t2 });
+    const names = new Set(merged.localTools.map((t3) => t3.name));
+    for (const t3 of DEFAULT_LOCAL_TOOLS) if (!names.has(t3.name)) merged.localTools.push({ ...t3 });
     return merged;
   }
   async function saveSettings(settings2) {
@@ -83,9 +83,108 @@
   }
 
   // src/shared/i18n.ts
+  var dict = {
+    // generic
+    app_name: { ru: "Nubit", en: "Nubit" },
+    settings: { ru: "\u041D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438", en: "Settings" },
+    save: { ru: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C", en: "Save" },
+    saved: { ru: "\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E", en: "Saved" },
+    cancel: { ru: "\u041E\u0442\u043C\u0435\u043D\u0430", en: "Cancel" },
+    delete: { ru: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C", en: "Delete" },
+    add: { ru: "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C", en: "Add" },
+    copy: { ru: "\u041A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C", en: "Copy" },
+    copied: { ru: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u043D\u043E", en: "Copied" },
+    loading: { ru: "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430\u2026", en: "Loading\u2026" },
+    error: { ru: "\u041E\u0448\u0438\u0431\u043A\u0430", en: "Error" },
+    ok: { ru: "OK", en: "OK" },
+    unknown: { ru: "\u2014", en: "\u2014" },
+    // metrics
+    vph: { ru: "\u041F\u0440\u043E\u0441\u043C./\u0447\u0430\u0441", en: "Views/hour" },
+    vph_full: { ru: "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432 \u0432 \u0447\u0430\u0441 (\u0441\u0440\u0435\u0434\u043D\u0435\u0435 \u0441 \u043F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u0438)", en: "Views per hour (lifetime average)" },
+    vph_recent: { ru: "\u0421\u0435\u0439\u0447\u0430\u0441", en: "Now" },
+    vph_recent_full: { ru: "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432 \u0432 \u0447\u0430\u0441 \u0437\u0430 \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435 \u0432\u0440\u0435\u043C\u044F (\u043F\u043E \u043D\u0430\u0448\u0438\u043C \u0437\u0430\u043C\u0435\u0440\u0430\u043C)", en: "Recent views per hour (from our snapshots)" },
+    views: { ru: "\u041F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u044B", en: "Views" },
+    likes: { ru: "\u041B\u0430\u0439\u043A\u0438", en: "Likes" },
+    comments: { ru: "\u041A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0438", en: "Comments" },
+    age: { ru: "\u0412\u043E\u0437\u0440\u0430\u0441\u0442", en: "Age" },
+    outlier: { ru: "Outlier", en: "Outlier" },
+    outlier_full: { ru: "\u0412\u043E \u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0440\u0430\u0437 \u0431\u043E\u043B\u044C\u0448\u0435 \u043C\u0435\u0434\u0438\u0430\u043D\u044B \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Views vs the channel median" },
+    subscribers: { ru: "\u041F\u043E\u0434\u043F\u0438\u0441\u0447\u0438\u043A\u0438", en: "Subscribers" },
+    engagement: { ru: "\u0412\u043E\u0432\u043B\u0435\u0447\u0451\u043D\u043D\u043E\u0441\u0442\u044C", en: "Engagement" },
+    engagement_full: { ru: "(\u043B\u0430\u0439\u043A\u0438 + \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0438) / \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u044B", en: "(likes + comments) / views" },
+    seo_score: { ru: "SEO-\u043E\u0446\u0435\u043D\u043A\u0430", en: "SEO score" },
+    tags: { ru: "\u0422\u0435\u0433\u0438", en: "Tags" },
+    no_tags: { ru: "\u0422\u0435\u0433\u043E\u0432 \u043D\u0435\u0442", en: "No tags" },
+    copy_all_tags: { ru: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0432\u0441\u0435", en: "Copy all" },
+    tag_ranks: { ru: "\u041F\u043E\u0437\u0438\u0446\u0438\u0438 \u0432 \u043F\u043E\u0438\u0441\u043A\u0435", en: "Search ranks" },
+    tag_ranks_hint: { ru: "#N \u2014 \u043C\u0435\u0441\u0442\u043E \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E \u0432 \u043F\u043E\u0438\u0441\u043A\u0435 YouTube \u043F\u043E \u0442\u0435\u0433\u0443 (\u0442\u043E\u043F-20); \xAB\u2014\xBB \u2014 \u043D\u0435 \u0432 \u0442\u043E\u043F-20.", en: `#N \u2014 this video's position in YouTube search for the tag (top 20); "\u2014" \u2014 not in the top 20.` },
+    channel_tags: { ru: "\u0422\u0435\u0433\u0438 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Channel tags" },
+    add_competitor: { ru: "+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442", en: "+ Competitor" },
+    competitor_added: { ru: "\u041A\u0430\u043D\u0430\u043B \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D \u0432 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Channel added to competitors" },
+    competitor_exists: { ru: "\u0423\u0436\u0435 \u0432 \u0441\u043F\u0438\u0441\u043A\u0435 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Already tracked" },
+    competitor_limit: { ru: "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C 30 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Up to 30 competitors" },
+    tab_chat: { ru: "\u0427\u0430\u0442", en: "Chat" },
+    tab_competitors: { ru: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Competitors" },
+    comp_empty: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0445 \u043A\u0430\u043D\u0430\u043B\u043E\u0432. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\xBB \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u0432\u0438\u0434\u0435\u043E \u0438\u043B\u0438 \u043A\u0430\u043D\u0430\u043B\u0430 \u2014 Nubit \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0437 \u0432 6 \u0447\u0430\u0441\u043E\u0432 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0442\u044C \u0438\u0445 \u043D\u043E\u0432\u044B\u0435 \u0432\u0438\u0434\u0435\u043E \u0438 \u0441\u043E\u043E\u0431\u0449\u0430\u0442\u044C, \u043A\u0430\u043A\u0438\u0435 \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u043B\u0438.", en: 'No tracked channels yet. Press "+ Competitor" on a video or channel page \u2014 Nubit checks their new uploads every 6 hours and reports the breakouts.' },
+    comp_refresh: { ru: "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C", en: "Refresh" },
+    comp_alerts: { ru: "\u0412\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u0432\u0448\u0438\u0435 \u0432\u0438\u0434\u0435\u043E", en: "Breakout videos" },
+    comp_no_alerts: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u043E\u0432\u043E\u0433\u043E. \u0421\u0438\u0433\u043D\u0430\u043B\u044B \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F, \u043A\u043E\u0433\u0434\u0430 \u043D\u043E\u0432\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430 \u043D\u0430\u0431\u0435\u0440\u0451\u0442 \u2265 2\xD7 \u043C\u0435\u0434\u0438\u0430\u043D\u044B \u043A\u0430\u043D\u0430\u043B\u0430 \u0438\u043B\u0438 \u2265 500 \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432/\u0447\u0430\u0441.", en: "Nothing new yet. Alerts appear when a new competitor video reaches \u2265 2\xD7 the channel median or \u2265 500 views/hour." },
+    comp_channels: { ru: "\u041A\u0430\u043D\u0430\u043B\u044B", en: "Channels" },
+    comp_median: { ru: "\u043C\u0435\u0434\u0438\u0430\u043D\u0430", en: "median" },
+    comp_per_week: { ru: "\u0432\u0438\u0434\u0435\u043E/\u043D\u0435\u0434", en: "videos/wk" },
+    comp_last: { ru: "\u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435", en: "last upload" },
+    comp_remove: { ru: "\u0423\u0431\u0440\u0430\u0442\u044C", en: "Remove" },
+    act_daily_ideas: { ru: "\u{1F4A1} \u0418\u0434\u0435\u0438 \u0434\u043D\u044F", en: "\u{1F4A1} Daily ideas" },
+    comp_add_by_link: { ru: "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0435 \u0438\u043B\u0438 @handle", en: "Add by link or @handle" },
+    captions: { ru: "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B", en: "Captions" },
+    auto: { ru: "\u0430\u0432\u0442\u043E", en: "auto" },
+    duration: { ru: "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C", en: "Duration" },
+    computing: { ru: "\u0441\u0447\u0438\u0442\u0430\u0435\u043C\u2026", en: "computing\u2026" },
+    show_checks: { ru: "\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438", en: "Show checks" },
+    hide_checks: { ru: "\u0421\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438", en: "Hide checks" },
+    // time units
+    t_min: { ru: "\u043C\u0438\u043D", en: "min" },
+    t_hour: { ru: "\u0447", en: "h" },
+    t_day: { ru: "\u0434", en: "d" },
+    t_month: { ru: "\u043C\u0435\u0441", en: "mo" },
+    t_year: { ru: "\u0433", en: "y" },
+    // actions
+    act_analyze_video: { ru: "\u0410\u043D\u0430\u043B\u0438\u0437 \u0432\u0438\u0434\u0435\u043E", en: "Analyze video" },
+    act_why_performing: { ru: "\u041F\u043E\u0447\u0435\u043C\u0443 \u0442\u0430\u043A \u043D\u0430\u0431\u0438\u0440\u0430\u0435\u0442?", en: "Why is it performing?" },
+    act_titles: { ru: "\u0412\u0430\u0440\u0438\u0430\u043D\u0442\u044B \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0439", en: "Title ideas" },
+    act_tags_description: { ru: "\u0422\u0435\u0433\u0438 \u0438 \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435", en: "Tags & description" },
+    act_keyword_research: { ru: "\u0410\u043D\u0430\u043B\u0438\u0437 \u0437\u0430\u043F\u0440\u043E\u0441\u0430", en: "Keyword research" },
+    act_channel_review: { ru: "\u0420\u0430\u0437\u0431\u043E\u0440 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Channel review" },
+    act_competitors: { ru: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Competitors" },
+    act_content_ideas: { ru: "\u0418\u0434\u0435\u0438 \u0434\u043B\u044F \u0432\u0438\u0434\u0435\u043E", en: "Content ideas" },
+    act_summarize: { ru: "\u041A\u0440\u0430\u0442\u043A\u043E \u043E \u0447\u0451\u043C \u0432\u0438\u0434\u0435\u043E", en: "Summarize video" },
+    open_chat: { ru: "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u0447\u0430\u0442", en: "Open chat" },
+    ai_analyze: { ru: "\u0410\u043D\u0430\u043B\u0438\u0437 \u0418\u0418", en: "AI analysis" },
+    // side panel
+    panel_placeholder: { ru: "\u0421\u043F\u0440\u043E\u0441\u0438\u0442\u0435 \u043E \u0432\u0438\u0434\u0435\u043E, \u043A\u0430\u043D\u0430\u043B\u0435 \u0438\u043B\u0438 \u0437\u0430\u043F\u0440\u043E\u0441\u0435\u2026", en: "Ask about this video, channel or search\u2026" },
+    panel_send: { ru: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C", en: "Send" },
+    panel_stop: { ru: "\u0421\u0442\u043E\u043F", en: "Stop" },
+    panel_clear: { ru: "\u041D\u043E\u0432\u044B\u0439 \u0447\u0430\u0442", en: "New chat" },
+    panel_no_key: { ru: "\u0414\u043E\u0431\u0430\u0432\u044C\u0442\u0435 API-\u043A\u043B\u044E\u0447 \u0432 \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0430\u0445, \u0447\u0442\u043E\u0431\u044B \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u044C \u0418\u0418.", en: "Add an API key in settings to enable the AI." },
+    panel_open_settings: { ru: "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438", en: "Open settings" },
+    panel_context_none: { ru: "\u041E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u0432\u0438\u0434\u0435\u043E, \u043F\u043E\u0438\u0441\u043A \u0438\u043B\u0438 \u043A\u0430\u043D\u0430\u043B \u043D\u0430 YouTube", en: "Open a video, search or channel on YouTube" },
+    panel_welcome: {
+      ru: "\u042F Nubit \u2014 \u0418\u0418-\u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A YouTube. \u0412\u0438\u0436\u0443 \u043E\u0442\u043A\u0440\u044B\u0442\u0443\u044E \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0443, \u0443\u043C\u0435\u044E \u0438\u0441\u043A\u0430\u0442\u044C \u0432\u0438\u0434\u0435\u043E, \u0447\u0438\u0442\u0430\u0442\u044C \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u044B \u0438 \u043A\u043E\u043C\u043C\u0435\u043D\u0442\u0430\u0440\u0438\u0438, \u0441\u0440\u0430\u0432\u043D\u0438\u0432\u0430\u0442\u044C \u0441 \u043A\u0430\u043D\u0430\u043B\u043E\u043C \u0438 \u043F\u043E\u0434\u0431\u0438\u0440\u0430\u0442\u044C \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0441\u043B\u043E\u0432\u0430.",
+      en: "I am Nubit \u2014 an AI YouTube analyst. I see the open page, can search videos, read transcripts and comments, compare against the channel and research keywords."
+    },
+    tool_running: { ru: "\u0432\u044B\u043F\u043E\u043B\u043D\u044F\u044E", en: "running" },
+    tool_done: { ru: "\u0433\u043E\u0442\u043E\u0432\u043E", en: "done" },
+    tool_error: { ru: "\u043E\u0448\u0438\u0431\u043A\u0430", en: "error" },
+    truncated_notice: { ru: "\u041E\u0442\u0432\u0435\u0442 \u0431\u044B\u043B \u043E\u0431\u0440\u0435\u0437\u0430\u043D \u043F\u043E \u043B\u0438\u043C\u0438\u0442\u0443 \u0442\u043E\u043A\u0435\u043D\u043E\u0432.", en: "The reply was cut off by the token limit." },
+    refusal_notice: { ru: "\u041C\u043E\u0434\u0435\u043B\u044C \u043E\u0442\u043A\u0430\u0437\u0430\u043B\u0430\u0441\u044C \u043E\u0442\u0432\u0435\u0447\u0430\u0442\u044C \u043D\u0430 \u044D\u0442\u043E\u0442 \u0437\u0430\u043F\u0440\u043E\u0441.", en: "The model declined to answer this request." },
+    aborted: { ru: "\u041E\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043E.", en: "Stopped." }
+  };
   var lang = "ru";
   function setLang(l) {
     lang = l;
+  }
+  function t(key) {
+    return dict[key][lang];
   }
   function formatCompact(n) {
     if (n === void 0 || !isFinite(n)) return "\u2014";
@@ -97,6 +196,16 @@
   }
   function trim(x) {
     return (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).replace(/\.?0+$/, "");
+  }
+  function formatAge(hours) {
+    if (hours === void 0 || !isFinite(hours)) return "\u2014";
+    if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} ${t("t_min")}`;
+    if (hours < 48) return `${Math.round(hours)} ${t("t_hour")}`;
+    const days = hours / 24;
+    if (days < 60) return `${Math.round(days)} ${t("t_day")}`;
+    const months = days / 30.44;
+    if (months < 24) return `${Math.round(months)} ${t("t_month")}`;
+    return `${(days / 365.25).toFixed(1)} ${t("t_year")}`;
   }
 
   // src/shared/markdown.ts
@@ -240,22 +349,22 @@
   };
   var HOOK_RE = /\?|:|—|–| - |\(|\[|\bhow\b|\bwhy\b|\bwhat\b|\bbest\b|\btop\b|\bvs\.?\b|\bsecret|\bmistake|\bnever\b|\bstop\b|\bbefore\b|\bкак\b|\bпочему\b|\bчто\b|\bлучш|\bтоп\b|\bсекрет|\bошибк|\bникогда\b|\bпротив\b|\bvs\b|\bпрежде\b|\bбез\b|\bза \d/iu;
   function titleScore(title, focusKeyword = "", lang3 = "ru") {
-    const t2 = title.trim();
+    const t3 = title.trim();
     const kw = focusKeyword.trim().toLowerCase();
-    const lower = t2.toLowerCase();
-    const ws = t2.split(/\s+/).filter(Boolean);
-    const letters = t2.replace(/[^\p{L}]/gu, "");
+    const lower = t3.toLowerCase();
+    const ws = t3.split(/\s+/).filter(Boolean);
+    const letters = t3.replace(/[^\p{L}]/gu, "");
     const capsRatio = letters.length ? letters.replace(/[^\p{Lu}]/gu, "").length / letters.length : 0;
-    const emojiCount = (t2.match(new RegExp("\\p{Extended_Pictographic}", "gu")) ?? []).length;
-    const exclam = (t2.match(/!/g) ?? []).length;
+    const emojiCount = (t3.match(new RegExp("\\p{Extended_Pictographic}", "gu")) ?? []).length;
+    const exclam = (t3.match(/!/g) ?? []).length;
     const normalized = ws.map((w) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "")).filter((w) => w.length > 2);
     const hasKw = kw ? lower.includes(kw) || overlap(words(kw), lower) >= 0.75 : false;
     const raw = [
-      ["length", t2.length >= 30 && t2.length <= 70, 20],
+      ["length", t3.length >= 30 && t3.length <= 70, 20],
       ["keyword", hasKw, 15],
       ["keyword_front", hasKw && (lower.indexOf(kw) >= 0 ? lower.indexOf(kw) < 40 : overlap(words(kw), lower.slice(0, 40)) >= 0.75), 10],
-      ["number", /\d/.test(t2), 10],
-      ["hook", HOOK_RE.test(t2), 15],
+      ["number", /\d/.test(t3), 10],
+      ["hook", HOOK_RE.test(t3), 15],
       ["words", ws.length >= 5 && ws.length <= 12, 10],
       ["style", capsRatio < 0.6 && exclam <= 1 && emojiCount <= 1, 10],
       ["unique", new Set(normalized).size === normalized.length, 10]
@@ -264,7 +373,7 @@
     const checks = applicable.map(([id, ok, weight]) => ({ id, ok, weight, label: TITLE_LABELS[id][lang3][0], hint: TITLE_LABELS[id][lang3][1] }));
     const total = checks.reduce((s, c) => s + c.weight, 0);
     const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
-    return { score: t2 ? Math.round(got / total * 100) : 0, checks };
+    return { score: t3 ? Math.round(got / total * 100) : 0, checks };
   }
   function guessFocusKeyword(title) {
     const ws = title.replace(/[|:—–\-()[\]"«»]/g, " ").split(/\s+/).filter((w) => w && !STOP.has(w.toLowerCase()) && !/^[\d!?.,]+$/.test(w));
@@ -272,7 +381,7 @@
   }
 
   // src/content/studio.css
-  var studio_default = ':host {\n  all: initial;\n  position: fixed;\n  left: 12px;\n  top: 96px;\n  z-index: 2147483000;\n  display: flex;\n  align-items: flex-start;\n  gap: 8px;\n  max-height: calc(100vh - 110px);\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  --nb-bg: #fff;\n  --nb-bg2: #f3f4f6;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.wrap { display: flex; align-items: flex-start; gap: 8px; max-height: calc(100vh - 110px); }\n\n/* vertical toolbar (vidIQ-style) */\n.toolbar {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 6px;\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 8px 24px rgba(0,0,0,.18);\n}\n.tool {\n  width: 40px;\n  height: 40px;\n  border: 0;\n  border-radius: 10px;\n  background: transparent;\n  color: var(--nb-fg);\n  cursor: pointer;\n  font-size: 18px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  position: relative;\n  font-family: inherit;\n}\n.tool:hover { background: var(--nb-bg2); }\n.tool.active { background: var(--nb-accent); color: #fff; }\n.tool.score { font-size: 12px; font-weight: 700; flex-direction: column; line-height: 1; gap: 2px; }\n.tool.score small { font-size: 9px; font-weight: 500; opacity: .8; }\n.tool.score.good { color: var(--nb-good); }\n.tool.score.warn { color: var(--nb-warn); }\n.tool.score.bad { color: var(--nb-bad); }\n.tool.score.active { color: #fff; }\n.tool .dotb { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; }\n.tool.logo-btn { background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); color: #fff; font-weight: 700; font-size: 13px; cursor: default; }\n.sep { height: 1px; background: var(--nb-line); margin: 2px 4px; }\n\n/* tool panel */\n.panel {\n  width: 370px;\n  max-height: calc(100vh - 110px);\n  background: var(--nb-bg);\n  color: var(--nb-fg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 10px 30px rgba(0,0,0,.18);\n  font-size: 13px;\n  line-height: 1.4;\n  display: flex;\n  flex-direction: column;\n  position: relative;\n}\n.head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--nb-line); }\n.head .title { font-weight: 600; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); white-space: nowrap; }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.icon { border: 0; background: none; color: var(--nb-fg2); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }\n.icon:hover { background: var(--nb-bg2); color: var(--nb-fg); }\n.body { overflow-y: auto; padding: 10px 12px 12px; }\n.sec { margin-bottom: 12px; }\n.sec h4 { margin: 0 0 6px; font-size: 12px; color: var(--nb-fg2); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }\n.sec h4 .pill { margin-left: auto; }\n.row { display: flex; align-items: center; gap: 6px; }\ninput.kw, select.kw { flex: 1; border: 1px solid var(--nb-line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--nb-bg); color: var(--nb-fg); min-width: 0; }\ninput.kw:focus { outline: 2px solid var(--nb-accent); outline-offset: -1px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }\n.btn:hover { background: var(--nb-bg2); }\n.btn:disabled { opacity: .5; cursor: default; }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.small { padding: 2px 8px; font-size: 11px; }\n.bar { height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; flex: 1; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.meter { display: grid; grid-template-columns: 95px 1fr 36px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }\n.meter .v { text-align: right; font-weight: 600; }\n.big { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }\n.big .n { font-size: 34px; font-weight: 700; line-height: 1; }\n.big.good .n { color: var(--nb-good); }\n.big.warn .n { color: var(--nb-warn); }\n.big.bad .n { color: var(--nb-bad); }\n.big .l { color: var(--nb-fg2); font-size: 12px; }\n.checks { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 1px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; font-size: 11px; color: var(--nb-fg2); }\n.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }\n.chip { background: var(--nb-bg2); border: 0; border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.chip:hover { background: var(--nb-line); }\n.chip.added { opacity: .5; cursor: default; }\n.chip b { font-weight: 600; color: var(--nb-fg2); }\n.muted { color: var(--nb-fg2); font-size: 12px; }\n.preview { background: var(--nb-bg2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }\n.preview .pt { color: #065fd4; font-size: 13px; font-weight: 500; }\n:host([data-theme="dark"]) .preview .pt { color: #3ea6ff; }\n.preview .pd { color: var(--nb-fg2); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }\n.result { border: 1px solid var(--nb-line); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }\n.result .status { font-size: 12px; color: var(--nb-fg2); display: flex; align-items: center; gap: 6px; }\n.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; flex: none; }\n@keyframes blink { 50% { opacity: .2; } }\n.item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--nb-line); }\n.item:first-of-type { border-top: 0; }\n.item .t { flex: 1; min-width: 0; }\n.item .t .a { color: var(--nb-fg2); font-size: 11px; }\n.item .t .n { color: var(--nb-fg2); font-size: 11px; }\npre.desc { white-space: pre-wrap; font: inherit; margin: 6px 0; max-height: 220px; overflow-y: auto; background: var(--nb-bg2); border-radius: 8px; padding: 8px; }\ntable.cmp { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }\ntable.cmp td { padding: 3px 4px; border-top: 1px solid var(--nb-line); vertical-align: top; }\ntable.cmp td.num { text-align: right; white-space: nowrap; color: var(--nb-fg2); }\n.err { color: var(--nb-bad); font-size: 12px; }\n.toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--nb-fg); color: var(--nb-bg); padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }\n.toast.show { opacity: .95; }\nol.fixes { margin: 4px 0; padding-left: 18px; }\n';
+  var studio_default = ':host {\n  all: initial;\n  position: fixed;\n  left: 12px;\n  top: 96px;\n  z-index: 2147483000;\n  display: flex;\n  align-items: flex-start;\n  gap: 8px;\n  max-height: calc(100vh - 110px);\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  --nb-bg: #fff;\n  --nb-bg2: #f3f4f6;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.wrap { display: flex; align-items: flex-start; gap: 8px; max-height: calc(100vh - 110px); }\n\n/* vertical toolbar (vidIQ-style) */\n.toolbar {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 6px;\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 8px 24px rgba(0,0,0,.18);\n}\n.tool {\n  width: 40px;\n  height: 40px;\n  border: 0;\n  border-radius: 10px;\n  background: transparent;\n  color: var(--nb-fg);\n  cursor: pointer;\n  font-size: 18px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  position: relative;\n  font-family: inherit;\n}\n.tool:hover { background: var(--nb-bg2); }\n.tool.active { background: var(--nb-accent); color: #fff; }\n.tool.score { font-size: 12px; font-weight: 700; flex-direction: column; line-height: 1; gap: 2px; }\n.tool.score small { font-size: 9px; font-weight: 500; opacity: .8; }\n.tool.score.good { color: var(--nb-good); }\n.tool.score.warn { color: var(--nb-warn); }\n.tool.score.bad { color: var(--nb-bad); }\n.tool.score.active { color: #fff; }\n.tool .dotb { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; }\n.tool.logo-btn { background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); color: #fff; font-weight: 700; font-size: 13px; cursor: default; }\n.sep { height: 1px; background: var(--nb-line); margin: 2px 4px; }\n\n/* tool panel */\n.panel {\n  width: 370px;\n  max-height: calc(100vh - 110px);\n  background: var(--nb-bg);\n  color: var(--nb-fg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 10px 30px rgba(0,0,0,.18);\n  font-size: 13px;\n  line-height: 1.4;\n  display: flex;\n  flex-direction: column;\n  position: relative;\n}\n.head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--nb-line); }\n.head .title { font-weight: 600; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); white-space: nowrap; }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.icon { border: 0; background: none; color: var(--nb-fg2); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }\n.icon:hover { background: var(--nb-bg2); color: var(--nb-fg); }\n.body { overflow-y: auto; padding: 10px 12px 12px; }\n.sec { margin-bottom: 12px; }\n.sec h4 { margin: 0 0 6px; font-size: 12px; color: var(--nb-fg2); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }\n.sec h4 .pill { margin-left: auto; }\n.row { display: flex; align-items: center; gap: 6px; }\ninput.kw, select.kw { flex: 1; border: 1px solid var(--nb-line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--nb-bg); color: var(--nb-fg); min-width: 0; }\ninput.kw:focus { outline: 2px solid var(--nb-accent); outline-offset: -1px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }\n.btn:hover { background: var(--nb-bg2); }\n.btn:disabled { opacity: .5; cursor: default; }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.small { padding: 2px 8px; font-size: 11px; }\n.bar { height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; flex: 1; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.meter { display: grid; grid-template-columns: 95px 1fr 36px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }\n.meter .v { text-align: right; font-weight: 600; }\n.big { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }\n.big .n { font-size: 34px; font-weight: 700; line-height: 1; }\n.big.good .n { color: var(--nb-good); }\n.big.warn .n { color: var(--nb-warn); }\n.big.bad .n { color: var(--nb-bad); }\n.big .l { color: var(--nb-fg2); font-size: 12px; }\n.checks { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 1px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; font-size: 11px; color: var(--nb-fg2); }\n.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }\n.chip { background: var(--nb-bg2); border: 0; border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.chip:hover { background: var(--nb-line); }\n.chip.added { opacity: .5; cursor: default; }\n.chip b { font-weight: 600; color: var(--nb-fg2); }\n.muted { color: var(--nb-fg2); font-size: 12px; }\n.preview { background: var(--nb-bg2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }\n.preview .pt { color: #065fd4; font-size: 13px; font-weight: 500; }\n:host([data-theme="dark"]) .preview .pt { color: #3ea6ff; }\n.preview .pd { color: var(--nb-fg2); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }\n.result { border: 1px solid var(--nb-line); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }\n.result .status { font-size: 12px; color: var(--nb-fg2); display: flex; align-items: center; gap: 6px; }\n.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; flex: none; }\n@keyframes blink { 50% { opacity: .2; } }\n.item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--nb-line); }\n.item:first-of-type { border-top: 0; }\n.item .t { flex: 1; min-width: 0; }\n.item .t .a { color: var(--nb-fg2); font-size: 11px; }\n.item .t .n { color: var(--nb-fg2); font-size: 11px; }\npre.desc { white-space: pre-wrap; font: inherit; margin: 6px 0; max-height: 220px; overflow-y: auto; background: var(--nb-bg2); border-radius: 8px; padding: 8px; }\ntable.cmp { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }\ntable.cmp td { padding: 3px 4px; border-top: 1px solid var(--nb-line); vertical-align: top; }\ntable.cmp td.num { text-align: right; white-space: nowrap; color: var(--nb-fg2); }\n.err { color: var(--nb-bad); font-size: 12px; }\n.toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--nb-fg); color: var(--nb-bg); padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }\n.toast.show { opacity: .95; }\nol.fixes { margin: 4px 0; padding-left: 18px; }\n.verdict { border-radius: 8px; padding: 6px 10px; margin: 6px 0; font-size: 12px; background: var(--nb-bg2); }\n.verdict.good { background: rgba(22,163,74,.12); color: var(--nb-good); }\n.verdict.warn { background: rgba(217,119,6,.12); color: var(--nb-warn); }\n.verdict.bad { background: rgba(220,38,38,.12); color: var(--nb-bad); }\nul.now { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }\nul.now li { margin: 2px 0; }\nul.now a { color: var(--nb-fg); text-decoration: none; }\nul.now .m { color: var(--nb-fg2); margin-left: 4px; font-size: 11px; }\nul.now .m b { color: var(--nb-good); }\n';
 
   // src/content/studio.ts
   var SEL = {
@@ -348,7 +457,23 @@
       thumb_hint: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u043F\u0440\u0435\u0432\u044C\u044E \u0432 \u043F\u043E\u043B\u0435 \xAB\u0417\u043D\u0430\u0447\u043E\u043A\xBB, \u0437\u0430\u0442\u0435\u043C \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u2014 \u043C\u043E\u0434\u0435\u043B\u044C \u043E\u0446\u0435\u043D\u0438\u0442 \u0447\u0438\u0442\u0430\u0435\u043C\u043E\u0441\u0442\u044C, \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442, \u0442\u0435\u043A\u0441\u0442, \u044D\u043C\u043E\u0446\u0438\u044E \u0438 \u0434\u0430\u0441\u0442 \u043F\u0440\u0430\u0432\u043A\u0438.",
       compare_hint: "\u0418\u0418 \u043D\u0430\u0439\u0434\u0451\u0442 \u0442\u043E\u043F\u2011\u0432\u0438\u0434\u0435\u043E \u043F\u043E \u0432\u0430\u0448\u0435\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 \u0438 \u0441\u043A\u0430\u0436\u0435\u0442, \u043D\u0430\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u0441\u044F, \u0447\u0442\u043E \u043F\u043E\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0438 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0438\u0442 \u0430\u043B\u044C\u0442\u0435\u0440\u043D\u0430\u0442\u0438\u0432\u044B.",
       magic_hint: "\u041E\u0434\u043D\u0430 \u043A\u043D\u043E\u043F\u043A\u0430: \u0418\u0418 \u0437\u0430\u043F\u043E\u043B\u043D\u0438\u0442 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0438 \u0442\u0435\u0433\u0438 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u0438 \u0441\u043F\u0440\u043E\u0441\u0430. \u0412\u0441\u0451 \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C.",
-      comp_need_kw: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043F\u0440\u043E\u0441 \u043F\u043E \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 (\u0432\u043A\u043B\u0430\u0434\u043A\u0430 IQ)."
+      comp_need_kw: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043F\u0440\u043E\u0441 \u043F\u043E \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 (\u0432\u043A\u043B\u0430\u0434\u043A\u0430 IQ).",
+      gen_topic: "\u{1F525} \u0427\u0442\u043E \u0441\u043D\u044F\u0442\u044C \u043F\u043E \u0442\u0435\u043C\u0435 \u0441\u0435\u0439\u0447\u0430\u0441",
+      now_working: "\u0421\u0435\u0439\u0447\u0430\u0441 \u043D\u0430\u0431\u0438\u0440\u0430\u044E\u0442",
+      verdict_hot: "\u0422\u0435\u043C\u0430 \u0436\u0438\u0432\u0430\u044F: \u0441\u0432\u0435\u0436\u0438\u0435 \u0432\u0438\u0434\u0435\u043E \u043D\u0430\u0431\u0438\u0440\u0430\u044E\u0442, \u0441\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C.",
+      verdict_ok: "\u0422\u0435\u043C\u0430 \u0440\u0430\u0431\u043E\u0447\u0430\u044F: \u0441\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C, \u043D\u0443\u0436\u0435\u043D \u0441\u0432\u043E\u0439 \u0443\u0433\u043E\u043B.",
+      verdict_hard: "\u0421\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C, \u043D\u043E \u0442\u043E\u043F \u0437\u0430\u043D\u044F\u0442 \u0441\u0438\u043B\u044C\u043D\u044B\u043C\u0438 \u043A\u0430\u043D\u0430\u043B\u0430\u043C\u0438 \u2014 \u043D\u0443\u0436\u0435\u043D \u0443\u0437\u043A\u0438\u0439 \u0443\u0433\u043E\u043B.",
+      verdict_cold: "\u0421\u043F\u0440\u043E\u0441 \u0441\u043B\u0430\u0431\u044B\u0439 \u0438\u043B\u0438 \u0442\u0435\u043C\u0430 \u043E\u0441\u0442\u044B\u043B\u0430 \u2014 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043C\u0435\u0436\u043D\u044B\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u044B.",
+      auto_checking: "\u0430\u043D\u0430\u043B\u0438\u0437\u0438\u0440\u0443\u044E \u0442\u0435\u043C\u0443\u2026",
+      demand_label: "\u0441\u043F\u0440\u043E\u0441",
+      comp_label: "\u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0446\u0438\u044F",
+      fresh_label: "\u0441\u0432\u0435\u0436\u0438\u0445 \u0432 \u0442\u043E\u043F\u0435",
+      topic_verdict: "\u0412\u044B\u0432\u043E\u0434",
+      topic_now: "\u0427\u0442\u043E \u0441\u0435\u0439\u0447\u0430\u0441 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442",
+      topic_title: "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u043F\u043E\u0434 \u0442\u0435\u043A\u0443\u0449\u0438\u0439 \u0441\u043F\u0440\u043E\u0441",
+      topic_format: "\u0424\u043E\u0440\u043C\u0430\u0442",
+      topic_avoid: "\u0427\u0435\u0433\u043E \u0438\u0437\u0431\u0435\u0433\u0430\u0442\u044C",
+      topic_related: "\u0421\u043C\u0435\u0436\u043D\u044B\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u044B"
     },
     en: {
       title: "Nubit \xB7 optimization",
@@ -416,7 +541,23 @@
       thumb_hint: "Upload a thumbnail in the Thumbnail field, then press the button \u2014 the model rates legibility, contrast, text, emotion and suggests fixes.",
       compare_hint: "The AI finds the top videos for your keyword and tells how much your title stands out, what to fix, and proposes alternatives.",
       magic_hint: "One click: the AI fills in the title, description and tags from the draft and demand data. Everything stays editable.",
-      comp_need_kw: "Check demand for the focus keyword first (IQ tab)."
+      comp_need_kw: "Check demand for the focus keyword first (IQ tab).",
+      gen_topic: "\u{1F525} What to make on this topic now",
+      now_working: "Gaining traffic now",
+      verdict_hot: "Live topic: fresh videos are gaining, demand is there.",
+      verdict_ok: "Workable topic: demand exists, you need your own angle.",
+      verdict_hard: "Demand exists but the top is held by strong channels \u2014 pick a narrow angle.",
+      verdict_cold: "Weak or cooling demand \u2014 check adjacent queries.",
+      auto_checking: "analyzing the topic\u2026",
+      demand_label: "demand",
+      comp_label: "competition",
+      fresh_label: "fresh in the top",
+      topic_verdict: "Verdict",
+      topic_now: "What works now",
+      topic_title: "Title for current demand",
+      topic_format: "Format",
+      topic_avoid: "Avoid",
+      topic_related: "Related queries"
     }
   };
   var settings;
@@ -434,7 +575,7 @@
     showSeoChecks: false,
     ai: {}
   };
-  var t = (k) => L[lang2][k];
+  var t2 = (k) => L[lang2][k];
   var sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   function q(list) {
     for (const s of list) {
@@ -496,7 +637,7 @@
     }
     if (!input) {
       await navigator.clipboard.writeText(fresh.join(", ")).catch(() => void 0);
-      toast(t("noTagsField"));
+      toast(t2("noTagsField"));
       return 0;
     }
     let added = 0;
@@ -524,20 +665,20 @@
   async function insert(field, value, mode = "replace") {
     if (field === "tags") {
       const n = await addTags(Array.isArray(value) ? value : String(value).split(/[,\n]/));
-      if (n) toast(`${t("inserted")}: ${n}`);
+      if (n) toast(`${t2("inserted")}: ${n}`);
       return n > 0;
     }
     const el = q(field === "title" ? SEL.title : SEL.description);
     if (!el) {
       await navigator.clipboard.writeText(String(value)).catch(() => void 0);
-      toast(t("copied"));
+      toast(t2("copied"));
       return false;
     }
     const text = Array.isArray(value) ? value.join("\n") : value;
     setEditable(el, mode === "append" && readEditable(el) ? `${readEditable(el)}
 
 ${text}` : text);
-    toast(t("inserted"));
+    toast(t2("inserted"));
     refreshDraft();
     return true;
   }
@@ -596,20 +737,20 @@ ${text}` : text);
     ${TOOLS.map((tl) => {
       const running = tl.action && state.running === tl.action;
       if (tl.id === "score") {
-        return `<button class="tool score ${pillClass(sc.optimize)} ${activeTool === "score" ? "active" : ""}" data-act="tool" data-val="score" title="${t("tool_score")}"><span>${d.title ? sc.optimize : "\u2014"}</span><small>IQ</small></button>`;
+        return `<button class="tool score ${pillClass(sc.optimize)} ${activeTool === "score" ? "active" : ""}" data-act="tool" data-val="score" title="${t2("tool_score")}"><span>${d.title ? sc.optimize : "\u2014"}</span><small>IQ</small></button>`;
       }
-      return `<button class="tool ${activeTool === tl.id ? "active" : ""}" data-act="tool" data-val="${tl.id}" title="${t(tl.label)}">${tl.icon}${running ? '<span class="dotb"></span>' : ""}</button>`;
+      return `<button class="tool ${activeTool === tl.id ? "active" : ""}" data-act="tool" data-val="${tl.id}" title="${t2(tl.label)}">${tl.icon}${running ? '<span class="dotb"></span>' : ""}</button>`;
     }).join("")}
     <div class="sep"></div>
-    <button class="tool" data-act="chat" title="${t("chat")}">\u{1F4AC}</button>
+    <button class="tool" data-act="chat" title="${t2("chat")}">\u{1F4AC}</button>
   </div>`;
     let panel = "";
     if (activeTool) {
       const tool = TOOLS.find((x) => x.id === activeTool);
       const body = toolBody(activeTool, sc, ready);
       panel = `<div class="panel">
-      <div class="head"><span class="title">${t(tool.label)}</span>
-        ${state.running ? `<button class="btn small" data-act="stop">${t("stop")}</button>` : ""}
+      <div class="head"><span class="title">${t2(tool.label)}</span>
+        ${state.running ? `<button class="btn small" data-act="stop">${t2("stop")}</button>` : ""}
         <button class="icon" data-act="tool" data-val="${activeTool}" title="\u2715">\u2715</button></div>
       <div class="body">${body}</div>
       <div class="toast" id="toast"></div>
@@ -637,11 +778,23 @@ ${text}` : text);
     }
     updateTitleBadge(sc);
   }
+  function verdictClass(r) {
+    if (r.demand >= 55 && r.competition < 65) return "good";
+    if (r.demand >= 35) return "warn";
+    return "bad";
+  }
+  function verdictText(r) {
+    const fresh = r.recentShare >= 0.3 || (r.recent?.length ?? 0) >= 3;
+    if (r.demand >= 55 && r.competition < 65 && fresh) return t2("verdict_hot");
+    if (r.demand >= 35 && r.competition >= 65) return t2("verdict_hard");
+    if (r.demand >= 35) return t2("verdict_ok");
+    return t2("verdict_cold");
+  }
   function aiButton(action, label, ready, primary = true) {
-    return `<button class="btn ${primary ? "primary" : ""}" data-act="ai" data-val="${action}" ${!ready || state.running ? "disabled" : ""}>${t(label)}</button>`;
+    return `<button class="btn ${primary ? "primary" : ""}" data-act="ai" data-val="${action}" ${!ready || state.running ? "disabled" : ""}>${t2(label)}</button>`;
   }
   function noKeyHtml(ready) {
-    return ready ? "" : `<div class="muted" style="margin-bottom:6px">${t("noKey")} <button class="btn small" data-act="settings">${t("openSettings")}</button></div>`;
+    return ready ? "" : `<div class="muted" style="margin-bottom:6px">${t2("noKey")} <button class="btn small" data-act="settings">${t2("openSettings")}</button></div>`;
   }
   function toolBody(tool, sc, ready) {
     const d = state.draft;
@@ -651,72 +804,76 @@ ${text}` : text);
       case "score": {
         const r = state.report && state.reportFor === kw ? state.report : void 0;
         return `<div class="sec">
-        <div class="big ${pillClass(sc.optimize)}"><span class="n">${d.title ? sc.optimize : "\u2014"}</span><span class="l">${t("optimize")}</span></div>
-        ${meter(t("titleSec"), d.title ? sc.title : void 0)}
-        ${meter(t("tool_thumb"), sc.thumbnail)}
-        ${meter(t("descSec"), d.description ? sc.description : void 0)}
-        ${meter(t("tagsSec"), d.tags.length ? sc.tags : void 0)}
-        <div class="muted" style="margin-top:4px">${t("optimize_hint")}</div>
+        <div class="big ${pillClass(sc.optimize)}"><span class="n">${d.title ? sc.optimize : "\u2014"}</span><span class="l">${t2("optimize")}</span></div>
+        ${meter(t2("titleSec"), d.title ? sc.title : void 0)}
+        ${meter(t2("tool_thumb"), sc.thumbnail)}
+        ${meter(t2("descSec"), d.description ? sc.description : void 0)}
+        ${meter(t2("tagsSec"), d.tags.length ? sc.tags : void 0)}
+        <div class="muted" style="margin-top:4px">${t2("optimize_hint")}</div>
       </div>
       <div class="sec"><h4>SEO <span class="pill ${pillClass(sc.seo.score)}">${sc.seo.score}</span></h4>
-        <div class="row"><div class="bar"><i style="width:${sc.seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t("show")}</button></div>
+        <div class="row"><div class="bar"><i style="width:${sc.seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t2("show")}</button></div>
         ${state.showSeoChecks ? checksHtml(sc.seo.checks) : ""}
       </div>
-      <div class="sec"><h4>${t("kw")}</h4>
+      <div class="sec"><h4>${t2("kw")}</h4>
         <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || "\u2026")}" />
-          <button class="btn" data-act="check" ${!kw || state.reportLoading ? "disabled" : ""}>${state.reportLoading ? t("checking") : t("check")}</button></div>
+          <button class="btn" data-act="check" ${!kw || state.reportLoading ? "disabled" : ""}>${state.reportLoading ? t2("checking") : t2("check")}</button></div>
         ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ""}
-        ${r ? `${meter(t("demand"), r.demand)}${meter(t("competition"), r.competition)}
-               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t("exact")}${r.medianViews ? ` \xB7 ${formatCompact(r.medianViews)} views median` : ""}</div>
-               ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t("suggestions")}:</div><div class="chips">${r.suggestions.slice(0, 12).map((x) => chip(x, "addtag", "", existing.has(x.toLowerCase()))).join("")}</div>` : ""}` : ""}
-      </div>`;
+        ${state.reportLoading && !r ? `<div class="muted" style="margin-top:4px">${t2("auto_checking")}</div>` : ""}
+        ${r ? `<div class="verdict ${verdictClass(r)}">${verdictText(r)}</div>
+               ${meter(t2("demand"), r.demand)}${meter(t2("competition"), r.competition)}
+               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t2("exact")} \xB7 ${Math.round(r.recentShare * 100)}% ${t2("fresh_label")}${r.medianViews ? ` \xB7 ${formatCompact(r.medianViews)} views median` : ""}</div>
+               ${r.recent?.length ? `<div class="muted" style="margin-top:8px">${t2("now_working")}:</div><ul class="now">${r.recent.slice(0, 5).map((v) => `<li><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" rel="noopener">${escapeHtml(v.title.slice(0, 64))}${v.title.length > 64 ? "\u2026" : ""}</a><span class="m">${formatCompact(v.views)} \xB7 ${formatAge(v.ageHours)} \xB7 <b>${formatCompact(v.vph)}/${t2("chars") === "\u0441\u0438\u043C\u0432." ? "\u0447" : "h"}</b></span></li>`).join("")}</ul>` : ""}
+               ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t2("suggestions")}:</div><div class="chips">${r.suggestions.slice(0, 12).map((x) => chip(x, "addtag", "", existing.has(x.toLowerCase()))).join("")}</div>` : ""}` : ""}
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_topic", "gen_topic", ready)}</div>${resultHtml("studio_topic", state.ai.studio_topic, existing)}</div>`;
       }
       case "titles": {
         const titleWords = d.title.split(/\s+/).filter(Boolean).length;
         return `<div class="sec">
-        <div class="big ${pillClass(sc.title)}"><span class="n">${d.title ? sc.title : "\u2014"}</span><span class="l">${d.title.length} ${t("chars")} \xB7 ${titleWords} ${t("words")}</span></div>
-        ${d.title ? `<div class="row"><div class="bar"><i style="width:${sc.title}%"></i></div><button class="btn small" data-act="toggleTitle">${t("show")}</button></div>${state.showTitleChecks ? checksHtml(sc.titleChecks.checks) : ""}
-          <div class="preview"><div class="muted">${t("preview")}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + "\u2026" : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split("\n").slice(0, 2).join("\n").slice(0, 150))}</div>` : ""}</div>` : `<div class="muted">${t("noTitle")}</div>`}
+        <div class="big ${pillClass(sc.title)}"><span class="n">${d.title ? sc.title : "\u2014"}</span><span class="l">${d.title.length} ${t2("chars")} \xB7 ${titleWords} ${t2("words")}</span></div>
+        ${d.title ? `<div class="row"><div class="bar"><i style="width:${sc.title}%"></i></div><button class="btn small" data-act="toggleTitle">${t2("show")}</button></div>${state.showTitleChecks ? checksHtml(sc.titleChecks.checks) : ""}
+          <div class="preview"><div class="muted">${t2("preview")}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + "\u2026" : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split("\n").slice(0, 2).join("\n").slice(0, 150))}</div>` : ""}</div>` : `<div class="muted">${t2("noTitle")}</div>`}
       </div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_titles", "gen_titles", ready)}</div>${resultHtml("studio_titles", state.ai.studio_titles, existing)}</div>`;
       }
       case "description":
         return `<div class="sec">
-        <div class="big ${pillClass(sc.description)}"><span class="n">${d.description ? sc.description : "\u2014"}</span><span class="l">${d.description.length} ${t("chars")}</span></div>
-        <div class="muted">${t("desc_hint")}</div>
+        <div class="big ${pillClass(sc.description)}"><span class="n">${d.description ? sc.description : "\u2014"}</span><span class="l">${d.description.length} ${t2("chars")}</span></div>
+        <div class="muted">${t2("desc_hint")}</div>
       </div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_description", "gen_description", ready)}</div>${resultHtml("studio_description", state.ai.studio_description, existing)}</div>`;
       case "thumbnail":
-        return `<div class="sec"><div class="muted">${t("thumb_hint")}</div></div>
+        return `<div class="sec"><div class="muted">${t2("thumb_hint")}</div></div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_thumbnail", "gen_thumb", ready)}</div>${resultHtml("studio_thumbnail", state.ai.studio_thumbnail, existing)}</div>`;
       case "tags": {
         const tpls = settings.tagTemplates ?? [];
         const r = state.report && state.reportFor === kw ? state.report : void 0;
         return `<div class="sec">
-        <div class="big ${pillClass(sc.tags)}"><span class="n">${d.tags.length}</span><span class="l">${t("tagsCount")} \xB7 ${d.tags.join(",").length}/500 ${t("chars")}</span></div>
+        <div class="big ${pillClass(sc.tags)}"><span class="n">${d.tags.length}</span><span class="l">${t2("tagsCount")} \xB7 ${d.tags.join(",").length}/500 ${t2("chars")}</span></div>
         ${d.tags.length ? `<div class="chips">${d.tags.slice(0, 30).map((x) => `<span class="chip added">${escapeHtml(x)}</span>`).join("")}</div>` : ""}
       </div>
-      <div class="sec"><h4>${t("templates")}</h4>
+      <div class="sec"><h4>${t2("templates")}</h4>
         <div class="row">
-          <select class="kw" id="tpl"><option value="">${t("templates")}\u2026</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join("")}</select>
-          <button class="btn small" data-act="tpl-apply">${t("tpl_apply")}</button>
-          <button class="btn small" data-act="tpl-del" title="${t("tpl_del")}">\u2715</button>
+          <select class="kw" id="tpl"><option value="">${t2("templates")}\u2026</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join("")}</select>
+          <button class="btn small" data-act="tpl-apply">${t2("tpl_apply")}</button>
+          <button class="btn small" data-act="tpl-del" title="${t2("tpl_del")}">\u2715</button>
         </div>
-        ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t("tpl_save")}</button></div>` : ""}
+        ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t2("tpl_save")}</button></div>` : ""}
       </div>
-      <div class="sec"><h4>${t("compTags")}</h4>
-        <div class="row"><button class="btn small" data-act="comptags" ${state.compTagsLoading || !r ? "disabled" : ""}>${state.compTagsLoading ? t("checking") : t("loadTags")}</button>
-          ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t("addAll")} (\u22652)</button>` : ""}</div>
-        ${!r ? `<div class="muted" style="margin-top:4px">${t("comp_need_kw")}</div>` : ""}
+      <div class="sec"><h4>${t2("compTags")}</h4>
+        <div class="row"><button class="btn small" data-act="comptags" ${state.compTagsLoading || !r ? "disabled" : ""}>${state.compTagsLoading ? t2("checking") : t2("loadTags")}</button>
+          ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t2("addAll")} (\u22652)</button>` : ""}</div>
+        ${!r ? `<div class="muted" style="margin-top:4px">${t2("comp_need_kw")}</div>` : ""}
         ${state.compTags?.length ? `<div class="chips">${state.compTags.slice(0, 24).map((x) => chip(x.tag, "addtag", ` <b>${x.n}</b>`, existing.has(x.tag.toLowerCase()))).join("")}</div>` : ""}
       </div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_tags", "gen_tags", ready)}</div>${resultHtml("studio_tags", state.ai.studio_tags, existing)}</div>`;
       }
       case "compare":
-        return `<div class="sec"><div class="muted">${t("compare_hint")}</div></div>
+        return `<div class="sec"><div class="muted">${t2("compare_hint")}</div></div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_compare", "gen_compare", ready)}</div>${resultHtml("studio_compare", state.ai.studio_compare, existing)}</div>`;
       case "magic":
-        return `<div class="sec"><div class="muted">${t("magic_hint")}</div></div>
+        return `<div class="sec"><div class="muted">${t2("magic_hint")}</div></div>
       <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_magic_fill", "gen_magic", ready)}</div>${resultHtml("studio_magic_fill", state.ai.studio_magic_fill, existing)}</div>`;
     }
   }
@@ -750,11 +907,11 @@ ${text}` : text);
     }
     const score = state.draft.title ? sc.title : void 0;
     badge.className = score === void 0 ? "" : score > 80 ? "good" : score > 40 ? "warn" : "bad";
-    badge.textContent = `${t("tool_titlescore")} ${score === void 0 ? "\u2014" : score}`;
+    badge.textContent = `${t2("tool_titlescore")} ${score === void 0 ? "\u2014" : score}`;
   }
   function resultHtml(action, r, existing) {
     if (!r || r.status === "idle") return "";
-    if (r.status === "running") return `<div class="result"><div class="status"><span class="dot"></span>${escapeHtml(r.progress ?? t("running"))}</div>${r.text ? `<div class="muted" style="margin-top:4px">${escapeHtml(r.text.slice(-160))}</div>` : ""}</div>`;
+    if (r.status === "running") return `<div class="result"><div class="status"><span class="dot"></span>${escapeHtml(r.progress ?? t2("running"))}</div>${r.text ? `<div class="muted" style="margin-top:4px">${escapeHtml(r.text.slice(-160))}</div>` : ""}</div>`;
     if (r.status === "error") return `<div class="result"><div class="err">${escapeHtml(r.error ?? "error")}</div></div>`;
     const p = r.parsed;
     if (!p) return `<div class="result"><pre class="desc">${escapeHtml(r.text)}</pre></div>`;
@@ -762,36 +919,49 @@ ${text}` : text);
       return `<div class="result">${p.titles.map((x) => {
         const title = typeof x === "string" ? x : String(x.title ?? "");
         const sc = titleScore(title, state.focusKeyword, lang2).score;
-        return `<div class="item"><div class="t">${escapeHtml(title)}<div class="a">${escapeHtml(String(x.angle ?? ""))}</div><div class="n">${title.length} ${t("chars")} \xB7 ${sc}</div></div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(title)}">${t("insert")}</button></div>`;
+        return `<div class="item"><div class="t">${escapeHtml(title)}<div class="a">${escapeHtml(String(x.angle ?? ""))}</div><div class="n">${title.length} ${t2("chars")} \xB7 ${sc}</div></div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(title)}">${t2("insert")}</button></div>`;
       }).join("")}</div>`;
     }
     if (action === "studio_description" && typeof p.description === "string") {
-      return `<div class="result"><pre class="desc">${escapeHtml(p.description)}</pre><div class="actions"><button class="btn small primary" data-act="insert" data-field="description" data-mode="replace">${t("insert")}</button><button class="btn small" data-act="insert" data-field="description" data-mode="append">${t("append")}</button></div></div>`;
+      return `<div class="result"><pre class="desc">${escapeHtml(p.description)}</pre><div class="actions"><button class="btn small primary" data-act="insert" data-field="description" data-mode="replace">${t2("insert")}</button><button class="btn small" data-act="insert" data-field="description" data-mode="append">${t2("append")}</button></div></div>`;
     }
     if (action === "studio_tags" && Array.isArray(p.tags)) {
       const tags = p.tags.map((x) => String(x)).filter(Boolean);
-      return `<div class="result"><div class="row"><span class="muted">${tags.length} ${t("tagsCount")} \xB7 ${tags.join(", ").length} ${t("chars")}</span><span style="flex:1"></span><button class="btn small primary" data-act="addtags" data-val="${escapeHtml(JSON.stringify(tags))}">${t("addAll")}</button></div>
+      return `<div class="result"><div class="row"><span class="muted">${tags.length} ${t2("tagsCount")} \xB7 ${tags.join(", ").length} ${t2("chars")}</span><span style="flex:1"></span><button class="btn small primary" data-act="addtags" data-val="${escapeHtml(JSON.stringify(tags))}">${t2("addAll")}</button></div>
       <div class="chips">${tags.map((x) => chip(x, "addtag", "", existing.has(x.toLowerCase()))).join("")}</div></div>`;
     }
+    if (action === "studio_topic" && (p.verdict || p.now_working)) {
+      const list = (title, arr) => Array.isArray(arr) && arr.length ? `<div class="muted" style="margin-top:6px">${title}:</div><ol class="fixes">${arr.map((x) => `<li>${escapeHtml(typeof x === "string" ? x : `${x.angle ?? ""} \u2014 ${x.why ?? ""}`)}</li>`).join("")}</ol>` : "";
+      const lvl = (v) => v === "high" ? "good" : v === "medium" ? "warn" : "bad";
+      return `<div class="result">
+      <div class="row">${p.demand_now ? `<span class="pill ${lvl(p.demand_now)}">${t2("demand_label")}: ${escapeHtml(String(p.demand_now))}</span>` : ""}${p.competition ? `<span class="pill ${p.competition === "low" ? "good" : p.competition === "medium" ? "warn" : "bad"}">${t2("comp_label")}: ${escapeHtml(String(p.competition))}</span>` : ""}</div>
+      <div style="margin-top:6px"><b>${t2("topic_verdict")}:</b> ${escapeHtml(String(p.verdict ?? ""))}</div>
+      ${list(t2("topic_now"), p.now_working)}
+      ${p.recommended_title ? `<div class="item"><div class="t"><div class="a">${t2("topic_title")}</div>${escapeHtml(String(p.recommended_title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.recommended_title))}">${t2("insert")}</button></div>` : ""}
+      ${p.best_format ? `<div class="muted" style="margin-top:4px"><b>${t2("topic_format")}:</b> ${escapeHtml(String(p.best_format))}</div>` : ""}
+      ${list(t2("topic_avoid"), p.avoid)}
+      ${Array.isArray(p.related_topics) && p.related_topics.length ? `<div class="muted" style="margin-top:6px">${t2("topic_related")}:</div><div class="chips">${p.related_topics.map((x) => chip(String(x), "addtag", "", existing.has(String(x).toLowerCase()))).join("")}</div>` : ""}
+    </div>`;
+    }
     if (action === "studio_magic_fill" && (p.title || p.description || p.tags)) {
-      return `<div class="result"><div class="muted">${t("magicDone")}</div>${p.title ? `<div class="item"><div class="t">${escapeHtml(String(p.title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.title))}">${t("insert")}</button></div>` : ""}</div>`;
+      return `<div class="result"><div class="muted">${t2("magicDone")}</div>${p.title ? `<div class="item"><div class="t">${escapeHtml(String(p.title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.title))}">${t2("insert")}</button></div>` : ""}</div>`;
     }
     if (action === "studio_thumbnail" && (typeof p.score === "number" || p.verdict)) {
       const score = Number(p.score ?? 0);
       const list = (title, arr) => Array.isArray(arr) && arr.length ? `<div class="muted" style="margin-top:6px">${title}:</div><ol class="fixes">${arr.map((x) => `<li>${escapeHtml(String(x))}</li>`).join("")}</ol>` : "";
-      return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t("gen_thumb").replace(/^\S+\s/, "")} ${score}</span></div>
+      return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t2("gen_thumb").replace(/^\S+\s/, "")} ${score}</span></div>
       <div style="margin-top:6px">${escapeHtml(String(p.verdict ?? ""))}</div>
-      ${p.text_on_thumbnail ? `<div class="muted" style="margin-top:4px">${t("thumbText")}: \xAB${escapeHtml(String(p.text_on_thumbnail))}\xBB</div>` : ""}
-      ${list(t("strengths"), p.strengths)}${list(t("issues"), p.issues)}${list(t("fixes"), p.suggestions)}${list(t("textIdeas"), p.text_ideas)}
+      ${p.text_on_thumbnail ? `<div class="muted" style="margin-top:4px">${t2("thumbText")}: \xAB${escapeHtml(String(p.text_on_thumbnail))}\xBB</div>` : ""}
+      ${list(t2("strengths"), p.strengths)}${list(t2("issues"), p.issues)}${list(t2("fixes"), p.suggestions)}${list(t2("textIdeas"), p.text_ideas)}
     </div>`;
     }
     if (action === "studio_compare" && (typeof p.score === "number" || p.verdict)) {
       const score = Number(p.score ?? 0);
-      return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t("standout")} ${score}</span></div>
+      return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t2("standout")} ${score}</span></div>
       <div style="margin-top:6px">${escapeHtml(String(p.verdict ?? ""))}</div>
-      ${Array.isArray(p.fixes) && p.fixes.length ? `<div class="muted" style="margin-top:6px">${t("fixes")}:</div><ol class="fixes">${p.fixes.map((f) => `<li>${escapeHtml(String(f))}</li>`).join("")}</ol>` : ""}
-      ${Array.isArray(p.alternatives) && p.alternatives.length ? `<div class="muted">${t("alternatives")}:</div>${p.alternatives.map((a) => `<div class="item"><div class="t">${escapeHtml(String(a))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(a))}">${t("insert")}</button></div>`).join("")}` : ""}
-      ${Array.isArray(p.competitors) && p.competitors.length ? `<div class="muted" style="margin-top:6px">${t("competitors")}:</div><table class="cmp">${p.competitors.slice(0, 10).map((c) => `<tr><td>${escapeHtml(String(c.title ?? ""))}<div class="muted">${escapeHtml(String(c.channel ?? ""))}</div></td><td class="num">${formatCompact(Number(c.views) || void 0)}<br>${c.vph ? formatCompact(Number(c.vph)) + "/h" : ""}</td></tr>`).join("")}</table>` : ""}
+      ${Array.isArray(p.fixes) && p.fixes.length ? `<div class="muted" style="margin-top:6px">${t2("fixes")}:</div><ol class="fixes">${p.fixes.map((f) => `<li>${escapeHtml(String(f))}</li>`).join("")}</ol>` : ""}
+      ${Array.isArray(p.alternatives) && p.alternatives.length ? `<div class="muted">${t2("alternatives")}:</div>${p.alternatives.map((a) => `<div class="item"><div class="t">${escapeHtml(String(a))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(a))}">${t2("insert")}</button></div>`).join("")}` : ""}
+      ${Array.isArray(p.competitors) && p.competitors.length ? `<div class="muted" style="margin-top:6px">${t2("competitors")}:</div><table class="cmp">${p.competitors.slice(0, 10).map((c) => `<tr><td>${escapeHtml(String(c.title ?? ""))}<div class="muted">${escapeHtml(String(c.channel ?? ""))}</div></td><td class="num">${formatCompact(Number(c.views) || void 0)}<br>${c.vph ? formatCompact(Number(c.vph)) + "/h" : ""}</td></tr>`).join("")}</table>` : ""}
     </div>`;
     }
     return `<div class="result"><pre class="desc">${escapeHtml(r.text)}</pre></div>`;
@@ -814,6 +984,7 @@ ${text}` : text);
       state.report = res;
       state.reportFor = kw;
       state.compTags = void 0;
+      if (!activeTool) activeTool = "score";
     } catch (err) {
       state.reportError = err instanceof Error ? err.message : String(err);
     } finally {
@@ -920,12 +1091,12 @@ ${text}` : text);
   }
   async function runThumbnailReview() {
     if (state.running) return;
-    state.ai.studio_thumbnail = { status: "running", text: "", progress: t("thumbLoading") };
+    state.ai.studio_thumbnail = { status: "running", text: "", progress: t2("thumbLoading") };
     state.running = "studio_thumbnail";
     render();
     const img = await captureThumbnail();
     if (!img) {
-      state.ai.studio_thumbnail = { status: "error", text: "", error: t("noThumb") };
+      state.ai.studio_thumbnail = { status: "error", text: "", error: t2("noThumb") };
       state.running = void 0;
       render();
       return;
@@ -956,7 +1127,7 @@ ${text}` : text);
       case "notice":
         if (ev.text === "aborted") {
           r.status = "error";
-          r.error = t("stop");
+          r.error = t2("stop");
         }
         break;
       case "done":
@@ -1050,7 +1221,7 @@ ${text}` : text);
         break;
       }
       case "tpl-save": {
-        const name = window.prompt(t("tpl_name"), state.focusKeyword || "")?.trim();
+        const name = window.prompt(t2("tpl_name"), state.focusKeyword || "")?.trim();
         if (!name) break;
         const list = (settings.tagTemplates ?? []).filter((x) => x.name !== name);
         list.push({ name, tags: [...state.draft.tags] });
@@ -1088,6 +1259,15 @@ ${text}` : text);
     state.draft = d;
     if (!state.focusEdited) state.focusKeyword = guessFocusKeyword(d.title);
     if (!kwInputFocused) render();
+    scheduleAutoCheck();
+  }
+  var autoTimer;
+  function scheduleAutoCheck() {
+    clearTimeout(autoTimer);
+    autoTimer = window.setTimeout(() => {
+      const kw = state.focusKeyword.trim();
+      if (kw.length >= 3 && kw !== state.reportFor && !state.reportLoading) void checkKeyword();
+    }, 2500);
   }
   function mount() {
     if (!host) {
