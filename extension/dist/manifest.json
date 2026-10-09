@@ -33,7 +33,8 @@
     "sidePanel",
     "nativeMessaging",
     "tabs",
-    "scripting"
+    "scripting",
+    "alarms"
   ],
   "optional_host_permissions": [
     "*://*/*"

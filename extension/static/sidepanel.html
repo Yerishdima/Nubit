@@ -17,6 +17,21 @@
     <button id="settings" class="icon" title="Settings">⚙</button>
   </header>
 
+  <nav class="tabs">
+    <button id="tab-chat" class="tab active" data-tab="chat"></button>
+    <button id="tab-competitors" class="tab" data-tab="competitors"></button>
+  </nav>
+
+  <section id="competitors" class="competitors hidden">
+    <div class="comp-head">
+      <button id="comp-ideas" class="btn primary"></button>
+      <button id="comp-refresh" class="btn"></button>
+    </div>
+    <div class="comp-add"><input id="comp-input" /><button id="comp-add-btn" class="btn">+</button></div>
+    <div id="comp-alerts"></div>
+    <div id="comp-list"></div>
+  </section>
+
   <div id="nokey" class="nokey hidden">
     <p id="nokey-text"></p>
     <button id="nokey-open" class="btn primary"></button>

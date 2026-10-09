@@ -3,6 +3,7 @@ import type { CommentItem, JsonSchema, Lang, PageContext, Settings, ToolDef } fr
 import { computeMetrics, extractVideoId } from '../shared/metrics.ts';
 import { roundNumbers } from './prompts.ts';
 import { keywordReport } from './keyword.ts';
+import { getCompetitorsState } from './competitors.ts';
 import { YouTube, YouTubeError } from './youtube.ts';
 import { nativeExec, NativeHostError } from './native.ts';
 
@@ -339,6 +340,24 @@ export function buildTools(settings: Settings): Tool[] {
       } catch (err) {
         return errorText(err);
       }
+    },
+  });
+
+  tools.push({
+    def: {
+      name: 'get_competitors',
+      description:
+        "The user's tracked competitor channels with their baseline (median views, uploads per week, subscribers), their best recent videos by outlier score, and recent alerts (new videos that beat the channel's baseline). Use for daily ideas, trend spotting and benchmarking.",
+      input_schema: { type: 'object', properties: {}, additionalProperties: false },
+    },
+    summary: (_i, l) => T('Читаю список конкурентов', 'Reading tracked competitors')(l),
+    run: async () => {
+      const st = await getCompetitorsState();
+      if (!st.competitors.length) return 'No competitors tracked yet. The user can add channels with the "+ Competitor" button on a video or channel page.';
+      return json({
+        competitors: Object.values(st.snapshots).map((s) => roundNumbers({ name: s.name, handle: s.handle, channel_id: s.channelId, subscribers: s.subscribers, median_views: s.medianViews, uploads_per_week: s.uploadsPerWeek, last_upload_age_hours: s.lastUploadAgeHours, top_recent_videos: s.topVideos.map((v) => roundNumbers({ id: v.videoId, title: v.title, views: v.views, age_hours: v.ageHours, vph: v.vph, outlier: v.outlier })) })),
+        alerts: st.alerts.slice(0, 30).map((a) => roundNumbers({ channel: a.channelName, id: a.videoId, title: a.title, views: a.views, age_hours: a.ageHours, vph: a.vph, outlier: a.outlier })),
+      });
     },
   });
 

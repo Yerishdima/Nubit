@@ -154,6 +154,11 @@ try {
   await panel.waitForSelector('.welcome');
   check((await panel.textContent('#send')) === 'Send', 'side panel renders with English texts');
   check(!(await panel.isVisible('#nokey')), 'side panel hides the "no key" notice when a key is set');
+  // competitors tab
+  await panel.click('#tab-competitors');
+  await panel.waitForSelector('#competitors:not(.hidden)');
+  check(/No tracked channels|Пока нет/.test(await panel.textContent('#comp-list')), 'competitors tab shows the empty state');
+  await panel.click('#tab-chat');
   await panel.screenshot({ path: path.join(out, 'sidepanel.png') });
   check(panelErrors.length === 0, `side panel has no JS errors (${panelErrors.join('; ')})`);
 
@@ -183,6 +188,7 @@ try {
   check(/1\.23M/.test(cardText), 'overlay shows subscribers from the DOM');
   check(/youtube growth/.test(cardText), 'overlay lists tags');
   check((await yt.evaluate(() => document.getElementById('nubit-overlay-host')?.parentElement?.id)) === 'secondary-inner', 'overlay is mounted in the sidebar');
+  check(/\+ Competitor|\+ Конкурент/.test(cardText), 'overlay has the "+ Competitor" button');
   const badges = await yt.$$eval('.nubit-badge.vph', (els) => els.map((e) => e.textContent));
   console.log('badges:', badges);
   check(badges.length === 2, 'VPH badges on related videos (live stream skipped)');

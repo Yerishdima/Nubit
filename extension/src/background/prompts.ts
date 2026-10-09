@@ -77,6 +77,10 @@ const ACTION_PROMPTS: Record<QuickActionId, Record<Lang, string>> = {
     ru: 'Получи субтитры этого видео (get_transcript) и кратко перескажи: о чём видео, ключевые тезисы по таймкодам, главный вывод. Если субтитров нет — скажи, как их включить.',
     en: 'Get this video\'s transcript (get_transcript) and summarize it: what it is about, key points with timestamps, main takeaway. If there is no transcript, explain how to enable one.',
   },
+  daily_ideas: {
+    ru: 'Составь «идеи дня»: вызови get_competitors (что сейчас выстреливает у отслеживаемых каналов) и, если есть контекст страницы, учти его; для 2–3 самых сильных тем проверь спрос через suggest_keywords или analyze_keyword. Выдай 10 идей для видео, которые с большой вероятностью наберут: для каждой — рабочее название (≤ 70 символов), почему сработает (конкретное видео-outlier или запрос), формат и длительность, чем отличиться от оригинала. Начни с 3 лучших. Если конкурентов нет — скажи, как их добавить, и предложи идеи по контексту страницы.',
+    en: 'Build "daily ideas": call get_competitors (what is breaking out on the tracked channels) and use the page context if present; verify demand for the 2–3 strongest topics with suggest_keywords or analyze_keyword. Give 10 video ideas likely to perform: for each a working title (≤ 70 chars), why it will work (the specific outlier video or query), format and length, and how to differ from the original. Lead with the top 3. If no competitors are tracked, explain how to add them and propose ideas from the page context.',
+  },
   // Studio actions must answer with JSON only: the Studio panel parses the reply and offers one-click insertion.
   studio_titles: {
     ru: 'Творец заполняет форму загрузки в YouTube Studio (черновик в page_context: название, описание, теги, фокус-запрос). Если фокус-запрос есть, проверь спрос инструментом analyze_keyword (один вызов). Предложи 8 названий ≤ 70 символов на языке черновика под разные углы (польза, цифры, вопрос, контраст, ошибка/секрет, «как»), с ключевым запросом ближе к началу. Ответь ТОЛЬКО JSON без пояснений: {"titles":[{"title":"...","angle":"кратко почему сработает"}]}',

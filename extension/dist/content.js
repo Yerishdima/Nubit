@@ -35,7 +35,8 @@
     customApis: [],
     localTools: DEFAULT_LOCAL_TOOLS,
     nativeHostName: "com.nubit.host",
-    tagTemplates: []
+    tagTemplates: [],
+    competitors: []
   };
   var KEY = "settings";
   async function loadSettings() {
@@ -91,6 +92,23 @@
     tag_ranks: { ru: "\u041F\u043E\u0437\u0438\u0446\u0438\u0438 \u0432 \u043F\u043E\u0438\u0441\u043A\u0435", en: "Search ranks" },
     tag_ranks_hint: { ru: "#N \u2014 \u043C\u0435\u0441\u0442\u043E \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E \u0432 \u043F\u043E\u0438\u0441\u043A\u0435 YouTube \u043F\u043E \u0442\u0435\u0433\u0443 (\u0442\u043E\u043F-20); \xAB\u2014\xBB \u2014 \u043D\u0435 \u0432 \u0442\u043E\u043F-20.", en: `#N \u2014 this video's position in YouTube search for the tag (top 20); "\u2014" \u2014 not in the top 20.` },
     channel_tags: { ru: "\u0422\u0435\u0433\u0438 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Channel tags" },
+    add_competitor: { ru: "+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442", en: "+ Competitor" },
+    competitor_added: { ru: "\u041A\u0430\u043D\u0430\u043B \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D \u0432 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Channel added to competitors" },
+    competitor_exists: { ru: "\u0423\u0436\u0435 \u0432 \u0441\u043F\u0438\u0441\u043A\u0435 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Already tracked" },
+    competitor_limit: { ru: "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C 30 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Up to 30 competitors" },
+    tab_chat: { ru: "\u0427\u0430\u0442", en: "Chat" },
+    tab_competitors: { ru: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Competitors" },
+    comp_empty: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0445 \u043A\u0430\u043D\u0430\u043B\u043E\u0432. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\xBB \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u0432\u0438\u0434\u0435\u043E \u0438\u043B\u0438 \u043A\u0430\u043D\u0430\u043B\u0430 \u2014 Nubit \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0437 \u0432 6 \u0447\u0430\u0441\u043E\u0432 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0442\u044C \u0438\u0445 \u043D\u043E\u0432\u044B\u0435 \u0432\u0438\u0434\u0435\u043E \u0438 \u0441\u043E\u043E\u0431\u0449\u0430\u0442\u044C, \u043A\u0430\u043A\u0438\u0435 \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u043B\u0438.", en: 'No tracked channels yet. Press "+ Competitor" on a video or channel page \u2014 Nubit checks their new uploads every 6 hours and reports the breakouts.' },
+    comp_refresh: { ru: "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C", en: "Refresh" },
+    comp_alerts: { ru: "\u0412\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u0432\u0448\u0438\u0435 \u0432\u0438\u0434\u0435\u043E", en: "Breakout videos" },
+    comp_no_alerts: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u043E\u0432\u043E\u0433\u043E. \u0421\u0438\u0433\u043D\u0430\u043B\u044B \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F, \u043A\u043E\u0433\u0434\u0430 \u043D\u043E\u0432\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430 \u043D\u0430\u0431\u0435\u0440\u0451\u0442 \u2265 2\xD7 \u043C\u0435\u0434\u0438\u0430\u043D\u044B \u043A\u0430\u043D\u0430\u043B\u0430 \u0438\u043B\u0438 \u2265 500 \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432/\u0447\u0430\u0441.", en: "Nothing new yet. Alerts appear when a new competitor video reaches \u2265 2\xD7 the channel median or \u2265 500 views/hour." },
+    comp_channels: { ru: "\u041A\u0430\u043D\u0430\u043B\u044B", en: "Channels" },
+    comp_median: { ru: "\u043C\u0435\u0434\u0438\u0430\u043D\u0430", en: "median" },
+    comp_per_week: { ru: "\u0432\u0438\u0434\u0435\u043E/\u043D\u0435\u0434", en: "videos/wk" },
+    comp_last: { ru: "\u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435", en: "last upload" },
+    comp_remove: { ru: "\u0423\u0431\u0440\u0430\u0442\u044C", en: "Remove" },
+    act_daily_ideas: { ru: "\u{1F4A1} \u0418\u0434\u0435\u0438 \u0434\u043D\u044F", en: "\u{1F4A1} Daily ideas" },
+    comp_add_by_link: { ru: "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0435 \u0438\u043B\u0438 @handle", en: "Add by link or @handle" },
     captions: { ru: "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B", en: "Captions" },
     auto: { ru: "\u0430\u0432\u0442\u043E", en: "auto" },
     duration: { ru: "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C", en: "Duration" },
@@ -750,7 +768,7 @@
   }
 
   // src/content/overlay.css
-  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\n.tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }\n.tag .rank.top { color: var(--nb-good); }\n.tag .rank.none { color: var(--nb-fg2); opacity: .6; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n';
+  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\n.tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }\n.tag .rank.top { color: var(--nb-good); }\n.tag .rank.none { color: var(--nb-fg2); opacity: .6; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n.toast { position: fixed; right: 20px; bottom: 20px; background: var(--nb-fg); color: var(--nb-bg); padding: 8px 12px; border-radius: 8px; font-size: 12px; z-index: 2147483000; }\n';
 
   // src/content/overlay.ts
   var HOST_ID = "nubit-overlay-host";
@@ -799,6 +817,13 @@
       },
       remove() {
         host.remove();
+      },
+      toast(msg) {
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = msg;
+        shadow.appendChild(el);
+        setTimeout(() => el.remove(), 2e3);
       }
     };
   }
@@ -865,6 +890,7 @@
       <button class="btn" data-action="titles">${t("act_titles")}</button>
       <button class="btn" data-action="tags_description">${t("act_tags_description")}</button>
       <button class="btn" data-action="chat">${t("open_chat")}</button>
+      <button class="btn" data-action="competitor" title="${t("tab_competitors")}">${t("add_competitor")}</button>
     </div>
   </div>`;
   }
@@ -1012,6 +1038,8 @@
     currentUrl = location.href;
     const token = ++navToken;
     const kind = pageKind();
+    if (kind === "channel") mountChannelPill();
+    else channelPill?.remove();
     if (kind !== "watch") {
       overlay?.remove();
       overlay = null;
@@ -1025,7 +1053,7 @@
     const videoId = currentVideoId();
     if (!videoId) return;
     overlayState = {};
-    if (!overlay) overlay = createOverlay((a) => a === "chat" ? openPanel() : a === "tagranks" ? void checkTagRanks() : openPanel(a));
+    if (!overlay) overlay = createOverlay((a) => a === "chat" ? openPanel() : a === "tagranks" ? void checkTagRanks() : a === "competitor" ? void addCompetitorFromVideo() : openPanel(a));
     overlay.update(overlayState);
     mountOverlay(token);
     let video;
@@ -1101,6 +1129,47 @@
       if (JSON.stringify([video.likes, video.comments, video.subscribers]) !== before) refresh();
       mountOverlay(token);
     }
+  }
+  async function addCompetitor(channel, notify) {
+    const res = await chrome.runtime.sendMessage({ type: "addCompetitor", channel }).catch((e) => ({ ok: false, message: String(e) }));
+    if ("error" in res) notify(res.error);
+    else if (res.message === "added") notify(t("competitor_added"));
+    else if (res.message === "exists") notify(t("competitor_exists"));
+    else if (res.message === "limit:30") notify(t("competitor_limit"));
+    else notify(res.message);
+  }
+  async function addCompetitorFromVideo() {
+    const v = overlayState.video;
+    const ref = v?.channelId ?? v?.channelHandle;
+    if (!ref) return;
+    await addCompetitor(ref, (m) => overlay?.toast(m));
+  }
+  var channelPill = null;
+  function mountChannelPill() {
+    if (channelPill?.isConnected) return;
+    const host = document.createElement("div");
+    host.id = "nubit-channel-pill";
+    const shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML = `<style>
+    :host { all: initial; position: fixed; right: 20px; bottom: 20px; z-index: 2147483000; font-family: Roboto, Arial, sans-serif; }
+    button { border: 0; background: #4f46e5; color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); font-family: inherit; }
+    button:hover { filter: brightness(1.1); }
+    .toast { position: fixed; right: 0; bottom: 44px; background: #0f0f0f; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; white-space: nowrap; }
+  </style><button>Nubit \xB7 ${t("add_competitor")}</button>`;
+    shadow.querySelector("button").addEventListener("click", () => {
+      const m = location.pathname.match(/^\/(@[^/?#]+|channel\/UC[\w-]{20,})/);
+      if (!m) return;
+      const ref = m[1].replace(/^channel\//, "");
+      addCompetitor(ref, (msg) => {
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.textContent = msg;
+        shadow.appendChild(el);
+        setTimeout(() => el.remove(), 2e3);
+      });
+    });
+    document.body.appendChild(host);
+    channelPill = host;
   }
   async function checkTagRanks() {
     const v = overlayState.video;

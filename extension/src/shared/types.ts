@@ -72,6 +72,7 @@ export interface Settings {
   localTools: LocalTool[];
   nativeHostName: string;
   tagTemplates: TagTemplate[];
+  competitors: Competitor[];
 }
 
 export interface CaptionTrack {
@@ -168,6 +169,40 @@ export interface ChannelData {
   url?: string;
   /** Channel keywords set by the owner (vidIQ calls them "channel tags"). */
   keywords?: string[];
+}
+
+/** A tracked competitor channel. */
+export interface Competitor {
+  channelId?: string;
+  handle?: string;
+  name: string;
+  addedAt: number;
+}
+
+export interface CompetitorSnapshot {
+  key: string;
+  name: string;
+  channelId?: string;
+  handle?: string;
+  subscribers?: number;
+  medianViews?: number;
+  uploadsPerWeek?: number;
+  lastUploadAgeHours?: number;
+  topVideos: Array<{ videoId: string; title: string; views?: number; ageHours?: number; vph?: number; outlier?: number }>;
+  fetchedAt: number;
+}
+
+export interface CompetitorAlert {
+  channelKey: string;
+  channelName: string;
+  videoId: string;
+  title: string;
+  views?: number;
+  ageHours?: number;
+  vph?: number;
+  outlier?: number;
+  seenAt: number;
+  unseen: boolean;
 }
 
 export interface TagRank {
@@ -291,7 +326,8 @@ export type QuickActionId =
   | 'studio_tags'
   | 'studio_compare'
   | 'studio_magic_fill'
-  | 'studio_thumbnail';
+  | 'studio_thumbnail'
+  | 'daily_ideas';
 
 // ---- Messaging ----------------------------------------------------------
 
@@ -331,4 +367,9 @@ export type RuntimeMessage =
   | { type: 'studioInsert'; field: 'title' | 'description' | 'tags'; value: string | string[]; mode?: 'replace' | 'append' }
   | { type: 'fetchImage'; url: string }
   | { type: 'tagRanks'; videoId: string; tags: string[] }
+  | { type: 'addCompetitor'; channel: string }
+  | { type: 'removeCompetitor'; key: string }
+  | { type: 'getCompetitors' }
+  | { type: 'refreshCompetitors' }
+  | { type: 'markAlertsSeen' }
   | { type: 'pageContextSummary'; tabId: number | null };

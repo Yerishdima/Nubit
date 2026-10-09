@@ -1,5 +1,6 @@
 // Side panel: chat UI talking to the background over a long-lived port.
-import type { ChatMessage, PageKind, PanelEvent, PanelRequest, QuickActionId, RuntimeMessage, Settings } from '../shared/types.ts';
+import type { ChatMessage, CompetitorAlert, CompetitorSnapshot, PageKind, PanelEvent, PanelRequest, QuickActionId, RuntimeMessage, Settings } from '../shared/types.ts';
+import { formatAge, formatCompact } from '../shared/i18n.ts';
 import { loadSettings, onSettingsChanged, providerReady } from '../shared/settings.ts';
 import { setLang, t, type I18nKey } from '../shared/i18n.ts';
 import { renderMarkdown, escapeHtml } from '../shared/markdown.ts';
@@ -32,6 +33,7 @@ const ACTIONS: Array<{ id: QuickActionId; key: I18nKey; kinds: PageKind[] }> = [
   { id: 'competitors', key: 'act_competitors', kinds: ['watch'] },
   { id: 'keyword_research', key: 'act_keyword_research', kinds: ['search'] },
   { id: 'channel_review', key: 'act_channel_review', kinds: ['channel'] },
+  { id: 'daily_ideas', key: 'act_daily_ideas', kinds: ['channel', 'search', 'home', 'watch', 'other', 'shorts', 'studio'] },
   { id: 'content_ideas', key: 'act_content_ideas', kinds: ['channel', 'search', 'home', 'watch', 'other', 'shorts', 'studio'] },
   { id: 'titles', key: 'act_titles', kinds: ['studio'] },
   { id: 'tags_description', key: 'act_tags_description', kinds: ['studio'] },
@@ -54,6 +56,11 @@ function connect(): void {
 }
 
 function applyTexts(): void {
+  $('tab-chat').textContent = t('tab_chat');
+  $('comp-ideas').textContent = t('act_daily_ideas');
+  $('comp-refresh').textContent = t('comp_refresh');
+  $<HTMLInputElement>('comp-input').placeholder = t('comp_add_by_link');
+  renderTabCount();
   inputEl.placeholder = t('panel_placeholder');
   sendBtn.textContent = t('panel_send');
   stopBtn.textContent = t('panel_stop');
@@ -217,6 +224,79 @@ async function restore(): Promise<void> {
   renderHistory();
 }
 
+// ---- competitors tab ----------------------------------------------------------
+
+let compState: { snapshots: Record<string, CompetitorSnapshot>; alerts: CompetitorAlert[] } = { snapshots: {}, alerts: [] };
+
+function renderTabCount(): void {
+  const n = compState.alerts.filter((a) => a.unseen).length;
+  $('tab-competitors').innerHTML = `${escapeHtml(t('tab_competitors'))}${n ? `<span class="count">${n}</span>` : ''}`;
+}
+
+async function loadCompetitors(refresh = false): Promise<void> {
+  const res = (await chrome.runtime.sendMessage({ type: refresh ? 'refreshCompetitors' : 'getCompetitors' } satisfies RuntimeMessage).catch(() => null)) as
+    | { snapshots: Record<string, CompetitorSnapshot>; alerts: CompetitorAlert[] }
+    | null;
+  if (res) compState = { snapshots: res.snapshots ?? {}, alerts: res.alerts ?? [] };
+  renderCompetitors();
+}
+
+function renderCompetitors(): void {
+  renderTabCount();
+  const alertsEl = $('comp-alerts');
+  const listEl = $('comp-list');
+  const snaps = Object.values(compState.snapshots);
+  if (!snaps.length) {
+    alertsEl.innerHTML = '';
+    listEl.innerHTML = `<div class="empty">${escapeHtml(t('comp_empty'))}</div>`;
+    return;
+  }
+  const alerts = compState.alerts.slice(0, 30);
+  alertsEl.innerHTML =
+    `<div class="comp-section">${escapeHtml(t('comp_alerts'))}</div>` +
+    (alerts.length
+      ? alerts
+          .map(
+            (a) =>
+              `<div class="alert ${a.unseen ? 'unseen' : ''}"><a href="https://www.youtube.com/watch?v=${a.videoId}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a><div class="meta">${escapeHtml(a.channelName)} · ${formatCompact(a.views)} · ${formatAge(a.ageHours)} · ${a.outlier ? `<b>${a.outlier.toFixed(1)}×</b>` : ''} ${a.vph ? `${formatCompact(a.vph)}/${t('t_hour')}` : ''}</div></div>`,
+          )
+          .join('')
+      : `<div class="empty">${escapeHtml(t('comp_no_alerts'))}</div>`);
+  listEl.innerHTML =
+    `<div class="comp-section">${escapeHtml(t('comp_channels'))} (${snaps.length})</div>` +
+    snaps
+      .sort((a, b) => (b.subscribers ?? 0) - (a.subscribers ?? 0))
+      .map(
+        (s) => `<div class="comp"><div class="name"><a href="https://www.youtube.com/${s.handle ?? 'channel/' + s.channelId}" target="_blank" rel="noopener">${escapeHtml(s.name)}</a><button class="x" data-remove="${escapeHtml(s.key)}">${escapeHtml(t('comp_remove'))}</button></div>
+          <div class="meta">${formatCompact(s.subscribers)} ${t('subscribers').toLowerCase()} · ${t('comp_median')} ${formatCompact(s.medianViews)} · ${s.uploadsPerWeek !== undefined ? s.uploadsPerWeek.toFixed(1) + ' ' + t('comp_per_week') : ''} · ${t('comp_last')} ${formatAge(s.lastUploadAgeHours)}</div>
+          <ul class="vids">${s.topVideos
+            .slice(0, 3)
+            .map((v) => `<li><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" rel="noopener">${escapeHtml(v.title.slice(0, 70))}</a> <span class="o">${v.outlier ? v.outlier.toFixed(1) + '×' : ''}</span> <span class="meta">${formatCompact(v.views)} · ${formatAge(v.ageHours)}</span></li>`)
+            .join('')}</ul></div>`,
+      )
+      .join('');
+  listEl.querySelectorAll<HTMLButtonElement>('[data-remove]').forEach((b) =>
+    b.addEventListener('click', async () => {
+      await chrome.runtime.sendMessage({ type: 'removeCompetitor', key: b.dataset.remove! } satisfies RuntimeMessage).catch(() => undefined);
+      await loadCompetitors();
+    }),
+  );
+}
+
+function showTab(tab: 'chat' | 'competitors'): void {
+  document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+  const chat = tab === 'chat';
+  $('messages').classList.toggle('hidden', !chat);
+  $('actions').classList.toggle('hidden', !chat);
+  document.querySelector<HTMLElement>('.composer')!.classList.toggle('hidden', !chat);
+  $('competitors').classList.toggle('hidden', chat);
+  if (!chat) {
+    loadCompetitors();
+    chrome.runtime.sendMessage({ type: 'markAlertsSeen' } satisfies RuntimeMessage).catch(() => undefined);
+    compState.alerts.forEach((a) => (a.unseen = false));
+  }
+}
+
 async function main(): Promise<void> {
   settings = await loadSettings();
   setLang(settings.language);
@@ -250,6 +330,20 @@ async function main(): Promise<void> {
     renderHistory();
   });
   $('settings').addEventListener('click', () => chrome.runtime.openOptionsPage());
+  document.querySelectorAll<HTMLElement>('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab as 'chat' | 'competitors')));
+  $('comp-refresh').addEventListener('click', () => loadCompetitors(true));
+  $('comp-ideas').addEventListener('click', () => {
+    showTab('chat');
+    send('', 'daily_ideas');
+  });
+  $('comp-add-btn').addEventListener('click', async () => {
+    const v = $<HTMLInputElement>('comp-input').value.trim();
+    if (!v) return;
+    $<HTMLInputElement>('comp-input').value = '';
+    await chrome.runtime.sendMessage({ type: 'addCompetitor', channel: v } satisfies RuntimeMessage).catch(() => undefined);
+    await loadCompetitors();
+  });
+  loadCompetitors();
   $('nokey-open').addEventListener('click', () => chrome.runtime.openOptionsPage());
 
   // Follow tab switches / navigations within this window.

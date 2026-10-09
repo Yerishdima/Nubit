@@ -19,6 +19,7 @@ export interface OverlayState {
 export interface Overlay {
   update(state: OverlayState): void;
   remove(): void;
+  toast(msg: string): void;
   readonly host: HTMLElement;
 }
 
@@ -28,7 +29,7 @@ function isDark(): boolean {
   return document.documentElement.hasAttribute('dark') || document.documentElement.getAttribute('data-theme') === 'dark';
 }
 
-export function createOverlay(onAction: (action: QuickActionId | 'chat' | 'tagranks') => void): Overlay {
+export function createOverlay(onAction: (action: QuickActionId | 'chat' | 'tagranks' | 'competitor') => void): Overlay {
   document.getElementById(HOST_ID)?.remove();
   const host = document.createElement('div');
   host.id = HOST_ID;
@@ -50,7 +51,7 @@ export function createOverlay(onAction: (action: QuickActionId | 'chat' | 'tagra
     const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action],[data-tag],[data-toggle]');
     if (!target) return;
     if (target.dataset.action) {
-      onAction(target.dataset.action as QuickActionId | 'chat' | 'tagranks');
+      onAction(target.dataset.action as QuickActionId | 'chat' | 'tagranks' | 'competitor');
     } else if (target.dataset.tag !== undefined) {
       const tag = target.dataset.tag === '*' ? (state.video?.tags ?? []).join(', ') : target.dataset.tag;
       navigator.clipboard.writeText(tag).then(() => {
@@ -73,6 +74,13 @@ export function createOverlay(onAction: (action: QuickActionId | 'chat' | 'tagra
     },
     remove() {
       host.remove();
+    },
+    toast(msg) {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      shadow.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
     },
   };
 }
@@ -163,6 +171,7 @@ function html(s: OverlayState, showChecks: boolean): string {
       <button class="btn" data-action="titles">${t('act_titles')}</button>
       <button class="btn" data-action="tags_description">${t('act_tags_description')}</button>
       <button class="btn" data-action="chat">${t('open_chat')}</button>
+      <button class="btn" data-action="competitor" title="${t('tab_competitors')}">${t('add_competitor')}</button>
     </div>
   </div>`;
 }

@@ -139,3 +139,29 @@ test('titleScore rewards keyword placement, hooks and numbers', async () => {
   assert.ok(!titleScore('Some title here for testing today', '').checks.some((c) => c.id.startsWith('keyword')));
   assert.equal(guessFocusKeyword('Как вырастить канал на YouTube: 7 шагов'), 'вырастить канал youtube');
 });
+
+
+test('competitor snapshot and alerts', async () => {
+  const { snapshotFromStats, computeAlerts } = await import('../src/shared/competitors.ts');
+  const now = Date.now();
+  const stats = {
+    channel: { name: 'C', handle: '@c', channelId: 'UCc', subscribers: 1000 },
+    videos: [
+      { videoId: 'v1', title: 'old hit', views: 50000, ageHours: 24 * 60 },
+      { videoId: 'v2', title: 'new hit', views: 30000, ageHours: 48 },
+      { videoId: 'v3', title: 'normal', views: 5000, ageHours: 100 },
+      { videoId: 'v4', title: 'normal 2', views: 6000, ageHours: 300 },
+      { videoId: 'v5', title: 'fast but small', views: 2000, ageHours: 2 },
+    ],
+    medianViews: 6000,
+    uploadsPerWeek: 2,
+    fetchedAt: now,
+  };
+  const snap = snapshotFromStats('ucc', stats as never, now);
+  assert.equal(snap.name, 'C');
+  assert.equal(snap.lastUploadAgeHours, 2);
+  assert.equal(snap.topVideos[0].videoId, 'v1');
+  const alerts = computeAlerts(snap, stats as never, new Set(['v5']), now);
+  assert.deepEqual(alerts.map((a) => a.videoId), ['v2']);
+  assert.ok(alerts[0].outlier && alerts[0].outlier > 4);
+});

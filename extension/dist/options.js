@@ -41,7 +41,8 @@
     customApis: [],
     localTools: DEFAULT_LOCAL_TOOLS,
     nativeHostName: "com.nubit.host",
-    tagTemplates: []
+    tagTemplates: [],
+    competitors: []
   };
   var KEY = "settings";
   async function loadSettings() {

@@ -8,6 +8,7 @@ import { runAgent } from './agent.ts';
 import { ProviderError, createProvider } from './providers/index.ts';
 import { actionPrompt, renderPageContext } from './prompts.ts';
 import { keywordReport, videoTags } from './keyword.ts';
+import { ALARM, addCompetitor, ensureAlarm, getCompetitorsState, markAlertsSeen, refreshCompetitors, removeCompetitor } from './competitors.ts';
 
 const youtube = new YouTube(loadSettings);
 
@@ -15,6 +16,11 @@ chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
   // First install: open the settings so the user can paste a key right away.
   if (details.reason === 'install') chrome.runtime.openOptionsPage().catch(() => undefined);
+  ensureAlarm();
+});
+chrome.runtime.onStartup.addListener(() => ensureAlarm());
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM) refreshCompetitors(youtube).catch(() => undefined);
 });
 
 // ---- page context -----------------------------------------------------------
@@ -97,6 +103,16 @@ chrome.runtime.onMessage.addListener((msg: RuntimeMessage, sender, sendResponse)
       return reply(fetchImage(msg.url));
     case 'tagRanks':
       return reply(youtube.tagRanks(msg.videoId, msg.tags));
+    case 'addCompetitor':
+      return reply(addCompetitor(youtube, msg.channel));
+    case 'removeCompetitor':
+      return reply(removeCompetitor(msg.key).then(() => ({ ok: true })));
+    case 'getCompetitors':
+      return reply(getCompetitorsState());
+    case 'refreshCompetitors':
+      return reply(refreshCompetitors(youtube));
+    case 'markAlertsSeen':
+      return reply(markAlertsSeen().then(() => ({ ok: true })));
     case 'studioInsert': {
       // Relay from the side panel to the Studio tab's content script.
       return reply(activeYouTubeTabId().then((id) => (id === null ? { error: 'No YouTube Studio tab is active' } : chrome.tabs.sendMessage(id, msg))));
@@ -278,6 +294,7 @@ function actionLabel(action: QuickActionId, s: Settings): string {
     studio_compare: ['Сравнение названия с конкурентами', 'Title vs competitors'],
     studio_magic_fill: ['Заполнить всё', 'Magic fill'],
     studio_thumbnail: ['Оценка превью', 'Thumbnail review'],
+    daily_ideas: ['Идеи дня', 'Daily ideas'],
   };
   return labels[action][ru ? 0 : 1];
 }

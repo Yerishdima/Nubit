@@ -1,78 +1,5 @@
 "use strict";
 (() => {
-  // src/shared/settings.ts
-  var DEFAULT_LOCAL_TOOLS = [
-    {
-      name: "yt-dlp",
-      path: "",
-      description: "Downloads video metadata and subtitles. Used for transcripts when the page has no caption tracks."
-    },
-    {
-      name: "ffmpeg",
-      path: "",
-      description: "Audio/video processing (extract audio, cut clips, probe files)."
-    }
-  ];
-  var DEFAULT_SETTINGS = {
-    language: "ru",
-    provider: "anthropic",
-    anthropicApiKey: "",
-    anthropicModel: "claude-opus-5-5",
-    openaiApiKey: "",
-    openaiModel: "gpt-5",
-    openaiBaseUrl: "https://api.openai.com/v1",
-    geminiApiKey: "",
-    geminiModel: "gemini-2.5-pro",
-    ollamaBaseUrl: "http://localhost:11434/v1",
-    ollamaModel: "llama3.1",
-    customProviders: [],
-    activeCustomProviderId: "",
-    effort: "medium",
-    youtubeApiKey: "",
-    showOverlay: true,
-    showBadges: true,
-    computeOutliers: true,
-    customApis: [],
-    localTools: DEFAULT_LOCAL_TOOLS,
-    nativeHostName: "com.nubit.host",
-    tagTemplates: []
-  };
-  var KEY = "settings";
-  async function loadSettings() {
-    const stored = await chrome.storage.local.get(KEY);
-    const s = stored[KEY] ?? {};
-    const merged = { ...DEFAULT_SETTINGS, ...s };
-    const names = new Set(merged.localTools.map((t2) => t2.name));
-    for (const t2 of DEFAULT_LOCAL_TOOLS) if (!names.has(t2.name)) merged.localTools.push({ ...t2 });
-    return merged;
-  }
-  function onSettingsChanged(cb) {
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === "local" && changes[KEY]) {
-        cb({ ...DEFAULT_SETTINGS, ...changes[KEY].newValue });
-      }
-    });
-  }
-  function activeCustomProvider(s) {
-    return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
-  }
-  function providerReady(s) {
-    switch (s.provider) {
-      case "anthropic":
-        return !!s.anthropicApiKey;
-      case "openai":
-        return !!s.openaiApiKey;
-      case "gemini":
-        return !!s.geminiApiKey;
-      case "ollama":
-        return !!s.ollamaBaseUrl;
-      case "custom": {
-        const p = activeCustomProvider(s);
-        return !!p && !!p.baseUrl && !!p.model;
-      }
-    }
-  }
-
   // src/shared/i18n.ts
   var dict = {
     // generic
@@ -110,6 +37,23 @@
     tag_ranks: { ru: "\u041F\u043E\u0437\u0438\u0446\u0438\u0438 \u0432 \u043F\u043E\u0438\u0441\u043A\u0435", en: "Search ranks" },
     tag_ranks_hint: { ru: "#N \u2014 \u043C\u0435\u0441\u0442\u043E \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E \u0432 \u043F\u043E\u0438\u0441\u043A\u0435 YouTube \u043F\u043E \u0442\u0435\u0433\u0443 (\u0442\u043E\u043F-20); \xAB\u2014\xBB \u2014 \u043D\u0435 \u0432 \u0442\u043E\u043F-20.", en: `#N \u2014 this video's position in YouTube search for the tag (top 20); "\u2014" \u2014 not in the top 20.` },
     channel_tags: { ru: "\u0422\u0435\u0433\u0438 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Channel tags" },
+    add_competitor: { ru: "+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442", en: "+ Competitor" },
+    competitor_added: { ru: "\u041A\u0430\u043D\u0430\u043B \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D \u0432 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Channel added to competitors" },
+    competitor_exists: { ru: "\u0423\u0436\u0435 \u0432 \u0441\u043F\u0438\u0441\u043A\u0435 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Already tracked" },
+    competitor_limit: { ru: "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C 30 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", en: "Up to 30 competitors" },
+    tab_chat: { ru: "\u0427\u0430\u0442", en: "Chat" },
+    tab_competitors: { ru: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", en: "Competitors" },
+    comp_empty: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0435\u0442 \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0445 \u043A\u0430\u043D\u0430\u043B\u043E\u0432. \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB+ \u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\xBB \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u0432\u0438\u0434\u0435\u043E \u0438\u043B\u0438 \u043A\u0430\u043D\u0430\u043B\u0430 \u2014 Nubit \u0431\u0443\u0434\u0435\u0442 \u0440\u0430\u0437 \u0432 6 \u0447\u0430\u0441\u043E\u0432 \u043F\u0440\u043E\u0432\u0435\u0440\u044F\u0442\u044C \u0438\u0445 \u043D\u043E\u0432\u044B\u0435 \u0432\u0438\u0434\u0435\u043E \u0438 \u0441\u043E\u043E\u0431\u0449\u0430\u0442\u044C, \u043A\u0430\u043A\u0438\u0435 \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u043B\u0438.", en: 'No tracked channels yet. Press "+ Competitor" on a video or channel page \u2014 Nubit checks their new uploads every 6 hours and reports the breakouts.' },
+    comp_refresh: { ru: "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C", en: "Refresh" },
+    comp_alerts: { ru: "\u0412\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u0432\u0448\u0438\u0435 \u0432\u0438\u0434\u0435\u043E", en: "Breakout videos" },
+    comp_no_alerts: { ru: "\u041F\u043E\u043A\u0430 \u043D\u0438\u0447\u0435\u0433\u043E \u043D\u043E\u0432\u043E\u0433\u043E. \u0421\u0438\u0433\u043D\u0430\u043B\u044B \u043F\u043E\u044F\u0432\u044F\u0442\u0441\u044F, \u043A\u043E\u0433\u0434\u0430 \u043D\u043E\u0432\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430 \u043D\u0430\u0431\u0435\u0440\u0451\u0442 \u2265 2\xD7 \u043C\u0435\u0434\u0438\u0430\u043D\u044B \u043A\u0430\u043D\u0430\u043B\u0430 \u0438\u043B\u0438 \u2265 500 \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432/\u0447\u0430\u0441.", en: "Nothing new yet. Alerts appear when a new competitor video reaches \u2265 2\xD7 the channel median or \u2265 500 views/hour." },
+    comp_channels: { ru: "\u041A\u0430\u043D\u0430\u043B\u044B", en: "Channels" },
+    comp_median: { ru: "\u043C\u0435\u0434\u0438\u0430\u043D\u0430", en: "median" },
+    comp_per_week: { ru: "\u0432\u0438\u0434\u0435\u043E/\u043D\u0435\u0434", en: "videos/wk" },
+    comp_last: { ru: "\u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0435\u0435", en: "last upload" },
+    comp_remove: { ru: "\u0423\u0431\u0440\u0430\u0442\u044C", en: "Remove" },
+    act_daily_ideas: { ru: "\u{1F4A1} \u0418\u0434\u0435\u0438 \u0434\u043D\u044F", en: "\u{1F4A1} Daily ideas" },
+    comp_add_by_link: { ru: "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u043E \u0441\u0441\u044B\u043B\u043A\u0435 \u0438\u043B\u0438 @handle", en: "Add by link or @handle" },
     captions: { ru: "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B", en: "Captions" },
     auto: { ru: "\u0430\u0432\u0442\u043E", en: "auto" },
     duration: { ru: "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C", en: "Duration" },
@@ -159,6 +103,101 @@
   }
   function t(key) {
     return dict[key][lang];
+  }
+  function formatCompact(n) {
+    if (n === void 0 || !isFinite(n)) return "\u2014";
+    const abs = Math.abs(n);
+    if (abs >= 1e9) return trim(n / 1e9) + (lang === "ru" ? " \u043C\u043B\u0440\u0434" : "B");
+    if (abs >= 1e6) return trim(n / 1e6) + (lang === "ru" ? " \u043C\u043B\u043D" : "M");
+    if (abs >= 1e3) return trim(n / 1e3) + (lang === "ru" ? " \u0442\u044B\u0441" : "K");
+    return String(Math.round(n));
+  }
+  function trim(x) {
+    return (x >= 100 ? x.toFixed(0) : x >= 10 ? x.toFixed(1) : x.toFixed(2)).replace(/\.?0+$/, "");
+  }
+  function formatAge(hours) {
+    if (hours === void 0 || !isFinite(hours)) return "\u2014";
+    if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} ${t("t_min")}`;
+    if (hours < 48) return `${Math.round(hours)} ${t("t_hour")}`;
+    const days = hours / 24;
+    if (days < 60) return `${Math.round(days)} ${t("t_day")}`;
+    const months = days / 30.44;
+    if (months < 24) return `${Math.round(months)} ${t("t_month")}`;
+    return `${(days / 365.25).toFixed(1)} ${t("t_year")}`;
+  }
+
+  // src/shared/settings.ts
+  var DEFAULT_LOCAL_TOOLS = [
+    {
+      name: "yt-dlp",
+      path: "",
+      description: "Downloads video metadata and subtitles. Used for transcripts when the page has no caption tracks."
+    },
+    {
+      name: "ffmpeg",
+      path: "",
+      description: "Audio/video processing (extract audio, cut clips, probe files)."
+    }
+  ];
+  var DEFAULT_SETTINGS = {
+    language: "ru",
+    provider: "anthropic",
+    anthropicApiKey: "",
+    anthropicModel: "claude-opus-5-5",
+    openaiApiKey: "",
+    openaiModel: "gpt-5",
+    openaiBaseUrl: "https://api.openai.com/v1",
+    geminiApiKey: "",
+    geminiModel: "gemini-2.5-pro",
+    ollamaBaseUrl: "http://localhost:11434/v1",
+    ollamaModel: "llama3.1",
+    customProviders: [],
+    activeCustomProviderId: "",
+    effort: "medium",
+    youtubeApiKey: "",
+    showOverlay: true,
+    showBadges: true,
+    computeOutliers: true,
+    customApis: [],
+    localTools: DEFAULT_LOCAL_TOOLS,
+    nativeHostName: "com.nubit.host",
+    tagTemplates: [],
+    competitors: []
+  };
+  var KEY = "settings";
+  async function loadSettings() {
+    const stored = await chrome.storage.local.get(KEY);
+    const s = stored[KEY] ?? {};
+    const merged = { ...DEFAULT_SETTINGS, ...s };
+    const names = new Set(merged.localTools.map((t2) => t2.name));
+    for (const t2 of DEFAULT_LOCAL_TOOLS) if (!names.has(t2.name)) merged.localTools.push({ ...t2 });
+    return merged;
+  }
+  function onSettingsChanged(cb) {
+    chrome.storage.onChanged.addListener((changes, area) => {
+      if (area === "local" && changes[KEY]) {
+        cb({ ...DEFAULT_SETTINGS, ...changes[KEY].newValue });
+      }
+    });
+  }
+  function activeCustomProvider(s) {
+    return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
+  }
+  function providerReady(s) {
+    switch (s.provider) {
+      case "anthropic":
+        return !!s.anthropicApiKey;
+      case "openai":
+        return !!s.openaiApiKey;
+      case "gemini":
+        return !!s.geminiApiKey;
+      case "ollama":
+        return !!s.ollamaBaseUrl;
+      case "custom": {
+        const p = activeCustomProvider(s);
+        return !!p && !!p.baseUrl && !!p.model;
+      }
+    }
   }
 
   // src/shared/markdown.ts
@@ -305,6 +344,7 @@
     { id: "competitors", key: "act_competitors", kinds: ["watch"] },
     { id: "keyword_research", key: "act_keyword_research", kinds: ["search"] },
     { id: "channel_review", key: "act_channel_review", kinds: ["channel"] },
+    { id: "daily_ideas", key: "act_daily_ideas", kinds: ["channel", "search", "home", "watch", "other", "shorts", "studio"] },
     { id: "content_ideas", key: "act_content_ideas", kinds: ["channel", "search", "home", "watch", "other", "shorts", "studio"] },
     { id: "titles", key: "act_titles", kinds: ["studio"] },
     { id: "tags_description", key: "act_tags_description", kinds: ["studio"] }
@@ -324,6 +364,11 @@
     port.postMessage({ type: "hello", tabId });
   }
   function applyTexts() {
+    $("tab-chat").textContent = t("tab_chat");
+    $("comp-ideas").textContent = t("act_daily_ideas");
+    $("comp-refresh").textContent = t("comp_refresh");
+    $("comp-input").placeholder = t("comp_add_by_link");
+    renderTabCount();
     inputEl.placeholder = t("panel_placeholder");
     sendBtn.textContent = t("panel_send");
     stopBtn.textContent = t("panel_stop");
@@ -474,6 +519,55 @@
     if (stored?.length) history = stored;
     renderHistory();
   }
+  var compState = { snapshots: {}, alerts: [] };
+  function renderTabCount() {
+    const n = compState.alerts.filter((a) => a.unseen).length;
+    $("tab-competitors").innerHTML = `${escapeHtml(t("tab_competitors"))}${n ? `<span class="count">${n}</span>` : ""}`;
+  }
+  async function loadCompetitors(refresh = false) {
+    const res = await chrome.runtime.sendMessage({ type: refresh ? "refreshCompetitors" : "getCompetitors" }).catch(() => null);
+    if (res) compState = { snapshots: res.snapshots ?? {}, alerts: res.alerts ?? [] };
+    renderCompetitors();
+  }
+  function renderCompetitors() {
+    renderTabCount();
+    const alertsEl = $("comp-alerts");
+    const listEl = $("comp-list");
+    const snaps = Object.values(compState.snapshots);
+    if (!snaps.length) {
+      alertsEl.innerHTML = "";
+      listEl.innerHTML = `<div class="empty">${escapeHtml(t("comp_empty"))}</div>`;
+      return;
+    }
+    const alerts = compState.alerts.slice(0, 30);
+    alertsEl.innerHTML = `<div class="comp-section">${escapeHtml(t("comp_alerts"))}</div>` + (alerts.length ? alerts.map(
+      (a) => `<div class="alert ${a.unseen ? "unseen" : ""}"><a href="https://www.youtube.com/watch?v=${a.videoId}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a><div class="meta">${escapeHtml(a.channelName)} \xB7 ${formatCompact(a.views)} \xB7 ${formatAge(a.ageHours)} \xB7 ${a.outlier ? `<b>${a.outlier.toFixed(1)}\xD7</b>` : ""} ${a.vph ? `${formatCompact(a.vph)}/${t("t_hour")}` : ""}</div></div>`
+    ).join("") : `<div class="empty">${escapeHtml(t("comp_no_alerts"))}</div>`);
+    listEl.innerHTML = `<div class="comp-section">${escapeHtml(t("comp_channels"))} (${snaps.length})</div>` + snaps.sort((a, b) => (b.subscribers ?? 0) - (a.subscribers ?? 0)).map(
+      (s) => `<div class="comp"><div class="name"><a href="https://www.youtube.com/${s.handle ?? "channel/" + s.channelId}" target="_blank" rel="noopener">${escapeHtml(s.name)}</a><button class="x" data-remove="${escapeHtml(s.key)}">${escapeHtml(t("comp_remove"))}</button></div>
+          <div class="meta">${formatCompact(s.subscribers)} ${t("subscribers").toLowerCase()} \xB7 ${t("comp_median")} ${formatCompact(s.medianViews)} \xB7 ${s.uploadsPerWeek !== void 0 ? s.uploadsPerWeek.toFixed(1) + " " + t("comp_per_week") : ""} \xB7 ${t("comp_last")} ${formatAge(s.lastUploadAgeHours)}</div>
+          <ul class="vids">${s.topVideos.slice(0, 3).map((v) => `<li><a href="https://www.youtube.com/watch?v=${v.videoId}" target="_blank" rel="noopener">${escapeHtml(v.title.slice(0, 70))}</a> <span class="o">${v.outlier ? v.outlier.toFixed(1) + "\xD7" : ""}</span> <span class="meta">${formatCompact(v.views)} \xB7 ${formatAge(v.ageHours)}</span></li>`).join("")}</ul></div>`
+    ).join("");
+    listEl.querySelectorAll("[data-remove]").forEach(
+      (b) => b.addEventListener("click", async () => {
+        await chrome.runtime.sendMessage({ type: "removeCompetitor", key: b.dataset.remove }).catch(() => void 0);
+        await loadCompetitors();
+      })
+    );
+  }
+  function showTab(tab) {
+    document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.tab === tab));
+    const chat = tab === "chat";
+    $("messages").classList.toggle("hidden", !chat);
+    $("actions").classList.toggle("hidden", !chat);
+    document.querySelector(".composer").classList.toggle("hidden", !chat);
+    $("competitors").classList.toggle("hidden", chat);
+    if (!chat) {
+      loadCompetitors();
+      chrome.runtime.sendMessage({ type: "markAlertsSeen" }).catch(() => void 0);
+      compState.alerts.forEach((a) => a.unseen = false);
+    }
+  }
   async function main() {
     settings = await loadSettings();
     setLang(settings.language);
@@ -505,6 +599,20 @@
       renderHistory();
     });
     $("settings").addEventListener("click", () => chrome.runtime.openOptionsPage());
+    document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    $("comp-refresh").addEventListener("click", () => loadCompetitors(true));
+    $("comp-ideas").addEventListener("click", () => {
+      showTab("chat");
+      send("", "daily_ideas");
+    });
+    $("comp-add-btn").addEventListener("click", async () => {
+      const v = $("comp-input").value.trim();
+      if (!v) return;
+      $("comp-input").value = "";
+      await chrome.runtime.sendMessage({ type: "addCompetitor", channel: v }).catch(() => void 0);
+      await loadCompetitors();
+    });
+    loadCompetitors();
     $("nokey-open").addEventListener("click", () => chrome.runtime.openOptionsPage());
     const refreshContext = async () => {
       const id = await currentTabId();

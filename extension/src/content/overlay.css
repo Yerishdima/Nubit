@@ -74,3 +74,4 @@
 .muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }
 .small { font-size: 11px; color: var(--nb-fg2); }
 .hidden { display: none; }
+.toast { position: fixed; right: 20px; bottom: 20px; background: var(--nb-fg); color: var(--nb-bg); padding: 8px 12px; border-radius: 8px; font-size: 12px; z-index: 2147483000; }

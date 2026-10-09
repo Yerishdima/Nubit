@@ -43,6 +43,7 @@ export const DEFAULT_SETTINGS: Settings = {
   localTools: DEFAULT_LOCAL_TOOLS,
   nativeHostName: 'com.nubit.host',
   tagTemplates: [],
+  competitors: [],
 };
 
 const KEY = 'settings';

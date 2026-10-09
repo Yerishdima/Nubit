@@ -1,7 +1,7 @@
 // Isolated-world content script: orchestrates page detection, the watch overlay, badges and page context.
 import type { ChannelStats, PageContext, QuickActionId, RuntimeMessage, Settings, TagRank, VideoData, VideoMetrics } from '../shared/types.ts';
 import { loadSettings, onSettingsChanged } from '../shared/settings.ts';
-import { setLang } from '../shared/i18n.ts';
+import { setLang, t } from '../shared/i18n.ts';
 import { computeMetrics } from '../shared/metrics.ts';
 import { videoFromPlayerResponse, watchExtrasFromData } from '../background/ytparse.ts';
 import { askMain } from './bridge.ts';
@@ -64,6 +64,8 @@ async function handleNavigation(force = false): Promise<void> {
   currentUrl = location.href;
   const token = ++navToken;
   const kind = pageKind();
+  if (kind === 'channel') mountChannelPill();
+  else channelPill?.remove();
   if (kind !== 'watch') {
     overlay?.remove();
     overlay = null;
@@ -78,7 +80,7 @@ async function watchFlow(token: number): Promise<void> {
   const videoId = currentVideoId();
   if (!videoId) return;
   overlayState = {};
-  if (!overlay) overlay = createOverlay((a) => (a === 'chat' ? openPanel() : a === 'tagranks' ? void checkTagRanks() : openPanel(a)));
+  if (!overlay) overlay = createOverlay((a) => (a === 'chat' ? openPanel() : a === 'tagranks' ? void checkTagRanks() : a === 'competitor' ? void addCompetitorFromVideo() : openPanel(a)));
   overlay.update(overlayState);
   mountOverlay(token);
 
@@ -172,6 +174,52 @@ async function watchFlow(token: number): Promise<void> {
     if (JSON.stringify([video.likes, video.comments, video.subscribers]) !== before) refresh();
     mountOverlay(token);
   }
+}
+
+async function addCompetitor(channel: string, notify: (msg: string) => void): Promise<void> {
+  const res = (await chrome.runtime.sendMessage({ type: 'addCompetitor', channel } satisfies RuntimeMessage).catch((e) => ({ ok: false, message: String(e) }))) as { ok: boolean; message: string } | { error: string };
+  if ('error' in res) notify(res.error);
+  else if (res.message === 'added') notify(t('competitor_added'));
+  else if (res.message === 'exists') notify(t('competitor_exists'));
+  else if (res.message === 'limit:30') notify(t('competitor_limit'));
+  else notify(res.message);
+}
+
+async function addCompetitorFromVideo(): Promise<void> {
+  const v = overlayState.video;
+  const ref = v?.channelId ?? v?.channelHandle;
+  if (!ref) return;
+  await addCompetitor(ref, (m) => overlay?.toast(m));
+}
+
+let channelPill: HTMLElement | null = null;
+
+/** Small "+ Competitor" pill on channel pages. */
+function mountChannelPill(): void {
+  if (channelPill?.isConnected) return;
+  const host = document.createElement('div');
+  host.id = 'nubit-channel-pill';
+  const shadow = host.attachShadow({ mode: 'open' });
+  shadow.innerHTML = `<style>
+    :host { all: initial; position: fixed; right: 20px; bottom: 20px; z-index: 2147483000; font-family: Roboto, Arial, sans-serif; }
+    button { border: 0; background: #4f46e5; color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); font-family: inherit; }
+    button:hover { filter: brightness(1.1); }
+    .toast { position: fixed; right: 0; bottom: 44px; background: #0f0f0f; color: #fff; padding: 6px 10px; border-radius: 8px; font-size: 12px; white-space: nowrap; }
+  </style><button>Nubit · ${t('add_competitor')}</button>`;
+  shadow.querySelector('button')!.addEventListener('click', () => {
+    const m = location.pathname.match(/^\/(@[^/?#]+|channel\/UC[\w-]{20,})/);
+    if (!m) return;
+    const ref = m[1].replace(/^channel\//, '');
+    addCompetitor(ref, (msg) => {
+      const el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      shadow.appendChild(el);
+      setTimeout(() => el.remove(), 2000);
+    });
+  });
+  document.body.appendChild(host);
+  channelPill = host;
 }
 
 async function checkTagRanks(): Promise<void> {

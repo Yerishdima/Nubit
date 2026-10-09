@@ -1182,7 +1182,8 @@ var DEFAULT_SETTINGS = {
   customApis: [],
   localTools: DEFAULT_LOCAL_TOOLS,
   nativeHostName: "com.nubit.host",
-  tagTemplates: []
+  tagTemplates: [],
+  competitors: []
 };
 var KEY = "settings";
 async function loadSettings() {
@@ -1192,6 +1193,9 @@ async function loadSettings() {
   const names = new Set(merged.localTools.map((t) => t.name));
   for (const t of DEFAULT_LOCAL_TOOLS) if (!names.has(t.name)) merged.localTools.push({ ...t });
   return merged;
+}
+async function saveSettings(settings) {
+  await chrome.storage.local.set({ [KEY]: settings });
 }
 function activeCustomProvider(s) {
   return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
@@ -19074,6 +19078,10 @@ var ACTION_PROMPTS = {
     ru: "\u041F\u043E\u043B\u0443\u0447\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u044B \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E (get_transcript) \u0438 \u043A\u0440\u0430\u0442\u043A\u043E \u043F\u0435\u0440\u0435\u0441\u043A\u0430\u0436\u0438: \u043E \u0447\u0451\u043C \u0432\u0438\u0434\u0435\u043E, \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0442\u0435\u0437\u0438\u0441\u044B \u043F\u043E \u0442\u0430\u0439\u043C\u043A\u043E\u0434\u0430\u043C, \u0433\u043B\u0430\u0432\u043D\u044B\u0439 \u0432\u044B\u0432\u043E\u0434. \u0415\u0441\u043B\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043E\u0432 \u043D\u0435\u0442 \u2014 \u0441\u043A\u0430\u0436\u0438, \u043A\u0430\u043A \u0438\u0445 \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u044C.",
     en: "Get this video's transcript (get_transcript) and summarize it: what it is about, key points with timestamps, main takeaway. If there is no transcript, explain how to enable one."
   },
+  daily_ideas: {
+    ru: "\u0421\u043E\u0441\u0442\u0430\u0432\u044C \xAB\u0438\u0434\u0435\u0438 \u0434\u043D\u044F\xBB: \u0432\u044B\u0437\u043E\u0432\u0438 get_competitors (\u0447\u0442\u043E \u0441\u0435\u0439\u0447\u0430\u0441 \u0432\u044B\u0441\u0442\u0440\u0435\u043B\u0438\u0432\u0430\u0435\u0442 \u0443 \u043E\u0442\u0441\u043B\u0435\u0436\u0438\u0432\u0430\u0435\u043C\u044B\u0445 \u043A\u0430\u043D\u0430\u043B\u043E\u0432) \u0438, \u0435\u0441\u043B\u0438 \u0435\u0441\u0442\u044C \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u044B, \u0443\u0447\u0442\u0438 \u0435\u0433\u043E; \u0434\u043B\u044F 2\u20133 \u0441\u0430\u043C\u044B\u0445 \u0441\u0438\u043B\u044C\u043D\u044B\u0445 \u0442\u0435\u043C \u043F\u0440\u043E\u0432\u0435\u0440\u044C \u0441\u043F\u0440\u043E\u0441 \u0447\u0435\u0440\u0435\u0437 suggest_keywords \u0438\u043B\u0438 analyze_keyword. \u0412\u044B\u0434\u0430\u0439 10 \u0438\u0434\u0435\u0439 \u0434\u043B\u044F \u0432\u0438\u0434\u0435\u043E, \u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0441 \u0431\u043E\u043B\u044C\u0448\u043E\u0439 \u0432\u0435\u0440\u043E\u044F\u0442\u043D\u043E\u0441\u0442\u044C\u044E \u043D\u0430\u0431\u0435\u0440\u0443\u0442: \u0434\u043B\u044F \u043A\u0430\u0436\u0434\u043E\u0439 \u2014 \u0440\u0430\u0431\u043E\u0447\u0435\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 (\u2264 70 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432), \u043F\u043E\u0447\u0435\u043C\u0443 \u0441\u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 (\u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u043E\u0435 \u0432\u0438\u0434\u0435\u043E-outlier \u0438\u043B\u0438 \u0437\u0430\u043F\u0440\u043E\u0441), \u0444\u043E\u0440\u043C\u0430\u0442 \u0438 \u0434\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C, \u0447\u0435\u043C \u043E\u0442\u043B\u0438\u0447\u0438\u0442\u044C\u0441\u044F \u043E\u0442 \u043E\u0440\u0438\u0433\u0438\u043D\u0430\u043B\u0430. \u041D\u0430\u0447\u043D\u0438 \u0441 3 \u043B\u0443\u0447\u0448\u0438\u0445. \u0415\u0441\u043B\u0438 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432 \u043D\u0435\u0442 \u2014 \u0441\u043A\u0430\u0436\u0438, \u043A\u0430\u043A \u0438\u0445 \u0434\u043E\u0431\u0430\u0432\u0438\u0442\u044C, \u0438 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0438 \u0438\u0434\u0435\u0438 \u043F\u043E \u043A\u043E\u043D\u0442\u0435\u043A\u0441\u0442\u0443 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u044B.",
+    en: 'Build "daily ideas": call get_competitors (what is breaking out on the tracked channels) and use the page context if present; verify demand for the 2\u20133 strongest topics with suggest_keywords or analyze_keyword. Give 10 video ideas likely to perform: for each a working title (\u2264 70 chars), why it will work (the specific outlier video or query), format and length, and how to differ from the original. Lead with the top 3. If no competitors are tracked, explain how to add them and propose ideas from the page context.'
+  },
   // Studio actions must answer with JSON only: the Studio panel parses the reply and offers one-click insertion.
   studio_titles: {
     ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context: \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435, \u0442\u0435\u0433\u0438, \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441). \u0415\u0441\u043B\u0438 \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C, \u043F\u0440\u043E\u0432\u0435\u0440\u044C \u0441\u043F\u0440\u043E\u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u043C analyze_keyword (\u043E\u0434\u0438\u043D \u0432\u044B\u0437\u043E\u0432). \u041F\u0440\u0435\u0434\u043B\u043E\u0436\u0438 8 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0439 \u2264 70 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u043F\u043E\u0434 \u0440\u0430\u0437\u043D\u044B\u0435 \u0443\u0433\u043B\u044B (\u043F\u043E\u043B\u044C\u0437\u0430, \u0446\u0438\u0444\u0440\u044B, \u0432\u043E\u043F\u0440\u043E\u0441, \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442, \u043E\u0448\u0438\u0431\u043A\u0430/\u0441\u0435\u043A\u0440\u0435\u0442, \xAB\u043A\u0430\u043A\xBB), \u0441 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u043C \u0437\u0430\u043F\u0440\u043E\u0441\u043E\u043C \u0431\u043B\u0438\u0436\u0435 \u043A \u043D\u0430\u0447\u0430\u043B\u0443. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON \u0431\u0435\u0437 \u043F\u043E\u044F\u0441\u043D\u0435\u043D\u0438\u0439: {"titles":[{"title":"...","angle":"\u043A\u0440\u0430\u0442\u043A\u043E \u043F\u043E\u0447\u0435\u043C\u0443 \u0441\u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442"}]}',
@@ -19181,6 +19189,135 @@ async function videoTags(youtube2, ids, limit2 = 6) {
     })
   );
   return out;
+}
+
+// src/shared/competitors.ts
+var ALERT_MAX_AGE_HOURS = 14 * 24;
+var ALERT_MIN_OUTLIER = 2;
+var ALERT_MIN_VPH = 500;
+function competitorKey(c) {
+  return (c.channelId ?? c.handle ?? "").toLowerCase();
+}
+function snapshotFromStats(key, stats, now = Date.now()) {
+  const med = stats.medianViews ?? 0;
+  const videos = stats.videos.map((v) => ({ ...v, ageHours: v.ageHours ?? ageHoursFromIso(v.publishedAt, now), outlier: med && v.views !== void 0 ? v.views / med : void 0 })).filter((v) => v.views !== void 0);
+  const ages = videos.map((v) => v.ageHours).filter((x) => x !== void 0);
+  const top = [...videos].sort((a, b) => (b.outlier ?? 0) - (a.outlier ?? 0)).slice(0, 6);
+  return {
+    key,
+    name: stats.channel.name ?? stats.channel.handle ?? key,
+    channelId: stats.channel.channelId,
+    handle: stats.channel.handle,
+    subscribers: stats.channel.subscribers,
+    medianViews: stats.medianViews,
+    uploadsPerWeek: stats.uploadsPerWeek,
+    lastUploadAgeHours: ages.length ? Math.min(...ages) : void 0,
+    topVideos: top.map(compactVideo),
+    fetchedAt: now
+  };
+}
+function compactVideo(v) {
+  return { videoId: v.videoId, title: v.title, views: v.views, ageHours: v.ageHours, vph: v.vph, outlier: v.outlier };
+}
+function computeAlerts(snapshot, stats, known, now = Date.now()) {
+  const med = stats.medianViews ?? 0;
+  const out = [];
+  for (const v of stats.videos) {
+    if (v.views === void 0 || known.has(v.videoId)) continue;
+    const age = v.ageHours ?? ageHoursFromIso(v.publishedAt, now);
+    if (age === void 0 || age > ALERT_MAX_AGE_HOURS) continue;
+    const outlier = med ? v.views / med : void 0;
+    const vph = v.vph ?? (age ? v.views / Math.max(age, 1) : void 0);
+    if ((outlier ?? 0) >= ALERT_MIN_OUTLIER || (vph ?? 0) >= ALERT_MIN_VPH) {
+      out.push({ channelKey: snapshot.key, channelName: snapshot.name, videoId: v.videoId, title: v.title, views: v.views, ageHours: age, vph, outlier, seenAt: now, unseen: true });
+    }
+  }
+  return out.sort((a, b) => (b.outlier ?? 0) - (a.outlier ?? 0));
+}
+
+// src/background/competitors.ts
+var SNAP_KEY2 = "competitorSnapshots";
+var ALERTS_KEY = "competitorAlerts";
+var ALARM = "nubit-competitors";
+var MAX_ALERTS = 120;
+async function getCompetitorsState() {
+  const s = await loadSettings();
+  const stored = await chrome.storage.local.get([SNAP_KEY2, ALERTS_KEY]);
+  return {
+    competitors: s.competitors,
+    snapshots: stored[SNAP_KEY2] ?? {},
+    alerts: stored[ALERTS_KEY] ?? []
+  };
+}
+async function addCompetitor(youtube2, channel) {
+  const s = await loadSettings();
+  if (s.competitors.length >= 30) return { ok: false, message: "limit:30" };
+  const stats = await youtube2.channelStats(channel, 25);
+  const c = { channelId: stats.channel.channelId, handle: stats.channel.handle, name: stats.channel.name ?? stats.channel.handle ?? channel, addedAt: Date.now() };
+  const key = competitorKey(c);
+  if (!key) return { ok: false, message: "unresolved" };
+  if (s.competitors.some((x) => competitorKey(x) === key)) return { ok: true, message: "exists", competitor: c };
+  s.competitors.push(c);
+  await saveSettings(s);
+  const snapshots = (await chrome.storage.local.get(SNAP_KEY2))[SNAP_KEY2] ?? {};
+  snapshots[key] = snapshotFromStats(key, stats);
+  await chrome.storage.local.set({ [SNAP_KEY2]: snapshots });
+  ensureAlarm();
+  return { ok: true, message: "added", competitor: c };
+}
+async function removeCompetitor(key) {
+  const s = await loadSettings();
+  s.competitors = s.competitors.filter((x) => competitorKey(x) !== key);
+  await saveSettings(s);
+  const stored = await chrome.storage.local.get([SNAP_KEY2, ALERTS_KEY]);
+  const snapshots = stored[SNAP_KEY2] ?? {};
+  delete snapshots[key];
+  const alerts = (stored[ALERTS_KEY] ?? []).filter((a) => a.channelKey !== key);
+  await chrome.storage.local.set({ [SNAP_KEY2]: snapshots, [ALERTS_KEY]: alerts });
+  await updateBadge(alerts);
+}
+async function refreshCompetitors(youtube2, settings) {
+  const s = settings ?? await loadSettings();
+  const stored = await chrome.storage.local.get([SNAP_KEY2, ALERTS_KEY]);
+  const snapshots = stored[SNAP_KEY2] ?? {};
+  let alerts = stored[ALERTS_KEY] ?? [];
+  const known = new Set(alerts.map((a) => a.videoId));
+  for (const c of s.competitors) {
+    const key = competitorKey(c);
+    if (!key) continue;
+    try {
+      const stats = await youtube2.channelStats(c.channelId ?? c.handle, 25, false);
+      const snap = snapshotFromStats(key, stats);
+      snapshots[key] = snap;
+      const fresh = computeAlerts(snap, stats, known).filter((a) => a.ageHours === void 0 || Date.now() - a.ageHours * 36e5 >= c.addedAt - 24 * 36e5);
+      for (const a of fresh) known.add(a.videoId);
+      alerts = [...fresh, ...alerts];
+    } catch {
+    }
+  }
+  alerts = alerts.slice(0, MAX_ALERTS);
+  await chrome.storage.local.set({ [SNAP_KEY2]: snapshots, [ALERTS_KEY]: alerts });
+  await updateBadge(alerts);
+  return { competitors: s.competitors, snapshots, alerts };
+}
+async function markAlertsSeen() {
+  const alerts = (await chrome.storage.local.get(ALERTS_KEY))[ALERTS_KEY] ?? [];
+  for (const a of alerts) a.unseen = false;
+  await chrome.storage.local.set({ [ALERTS_KEY]: alerts });
+  await updateBadge(alerts);
+}
+async function updateBadge(alerts) {
+  const n = alerts.filter((a) => a.unseen).length;
+  try {
+    await chrome.action.setBadgeBackgroundColor({ color: "#ea580c" });
+    await chrome.action.setBadgeText({ text: n ? String(n) : "" });
+  } catch {
+  }
+}
+function ensureAlarm() {
+  chrome.alarms.get(ALARM).then((a) => {
+    if (!a) chrome.alarms.create(ALARM, { periodInMinutes: 360, delayInMinutes: 5 });
+  });
 }
 
 // src/background/tools.ts
@@ -19472,6 +19609,22 @@ ${slice}`;
       }
     }
   });
+  tools.push({
+    def: {
+      name: "get_competitors",
+      description: "The user's tracked competitor channels with their baseline (median views, uploads per week, subscribers), their best recent videos by outlier score, and recent alerts (new videos that beat the channel's baseline). Use for daily ideas, trend spotting and benchmarking.",
+      input_schema: { type: "object", properties: {}, additionalProperties: false }
+    },
+    summary: (_i, l) => T("\u0427\u0438\u0442\u0430\u044E \u0441\u043F\u0438\u0441\u043E\u043A \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432", "Reading tracked competitors")(l),
+    run: async () => {
+      const st = await getCompetitorsState();
+      if (!st.competitors.length) return 'No competitors tracked yet. The user can add channels with the "+ Competitor" button on a video or channel page.';
+      return json({
+        competitors: Object.values(st.snapshots).map((s) => roundNumbers({ name: s.name, handle: s.handle, channel_id: s.channelId, subscribers: s.subscribers, median_views: s.medianViews, uploads_per_week: s.uploadsPerWeek, last_upload_age_hours: s.lastUploadAgeHours, top_recent_videos: s.topVideos.map((v) => roundNumbers({ id: v.videoId, title: v.title, views: v.views, age_hours: v.ageHours, vph: v.vph, outlier: v.outlier })) })),
+        alerts: st.alerts.slice(0, 30).map((a) => roundNumbers({ channel: a.channelName, id: a.videoId, title: a.title, views: a.views, age_hours: a.ageHours, vph: a.vph, outlier: a.outlier }))
+      });
+    }
+  });
   const apis = settings.customApis.filter((a) => a.name && a.baseUrl);
   if (apis.length) {
     tools.push({
@@ -19671,6 +19824,11 @@ var youtube = new YouTube(loadSettings);
 chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => void 0);
   if (details.reason === "install") chrome.runtime.openOptionsPage().catch(() => void 0);
+  ensureAlarm();
+});
+chrome.runtime.onStartup.addListener(() => ensureAlarm());
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === ALARM) refreshCompetitors(youtube).catch(() => void 0);
 });
 async function getPageContext(tabId) {
   const id = tabId ?? await activeYouTubeTabId();
@@ -19745,6 +19903,16 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return reply(fetchImage(msg.url));
     case "tagRanks":
       return reply(youtube.tagRanks(msg.videoId, msg.tags));
+    case "addCompetitor":
+      return reply(addCompetitor(youtube, msg.channel));
+    case "removeCompetitor":
+      return reply(removeCompetitor(msg.key).then(() => ({ ok: true })));
+    case "getCompetitors":
+      return reply(getCompetitorsState());
+    case "refreshCompetitors":
+      return reply(refreshCompetitors(youtube));
+    case "markAlertsSeen":
+      return reply(markAlertsSeen().then(() => ({ ok: true })));
     case "studioInsert": {
       return reply(activeYouTubeTabId().then((id) => id === null ? { error: "No YouTube Studio tab is active" } : chrome.tabs.sendMessage(id, msg)));
     }
@@ -19911,7 +20079,8 @@ function actionLabel(action, s) {
     studio_tags: ["\u0422\u0435\u0433\u0438 \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Tags for the draft"],
     studio_compare: ["\u0421\u0440\u0430\u0432\u043D\u0435\u043D\u0438\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0441 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430\u043C\u0438", "Title vs competitors"],
     studio_magic_fill: ["\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0432\u0441\u0451", "Magic fill"],
-    studio_thumbnail: ["\u041E\u0446\u0435\u043D\u043A\u0430 \u043F\u0440\u0435\u0432\u044C\u044E", "Thumbnail review"]
+    studio_thumbnail: ["\u041E\u0446\u0435\u043D\u043A\u0430 \u043F\u0440\u0435\u0432\u044C\u044E", "Thumbnail review"],
+    daily_ideas: ["\u0418\u0434\u0435\u0438 \u0434\u043D\u044F", "Daily ideas"]
   };
   return labels[action][ru ? 0 : 1];
 }

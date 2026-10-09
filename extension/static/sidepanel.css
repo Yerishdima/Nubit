@@ -41,7 +41,27 @@ body {
 .icon { border: 0; background: none; color: var(--fg2); font-size: 18px; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
 .icon:hover { background: var(--bg2); color: var(--fg); }
 
-.nokey { margin: 12px; padding: 12px; background: var(--bg2); border-radius: 10px; }
+.tabs { display: flex; gap: 2px; padding: 6px 12px 0; border-bottom: 1px solid var(--line); }
+.tab { border: 0; background: none; color: var(--fg2); padding: 6px 10px; font: inherit; cursor: pointer; border-bottom: 2px solid transparent; }
+.tab.active { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.tab .count { display: inline-block; min-width: 16px; padding: 0 5px; margin-left: 4px; border-radius: 999px; background: #ea580c; color: #fff; font-size: 11px; text-align: center; }
+.competitors { flex: 1; overflow-y: auto; padding: 10px 12px; }
+.comp-head { display: flex; gap: 8px; margin-bottom: 8px; }
+.comp-add { display: flex; gap: 6px; margin-bottom: 10px; }
+.comp-add input { flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--bg); color: var(--fg); }
+.comp-section { color: var(--fg2); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin: 10px 0 6px; }
+.alert { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+.alert.unseen { border-color: var(--accent); }
+.alert a { color: var(--fg); text-decoration: none; font-weight: 500; }
+.alert .meta { color: var(--fg2); font-size: 12px; margin-top: 2px; }
+.comp { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+.comp .name { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.comp .name .x { margin-left: auto; border: 0; background: none; color: var(--fg2); cursor: pointer; font-size: 12px; }
+.comp .meta { color: var(--fg2); font-size: 12px; }
+.comp .vids { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }
+.comp .vids a { color: var(--fg); text-decoration: none; }
+.comp .vids .o { color: var(--good); font-weight: 600; }
+.empty { color: var(--fg2); font-size: 13px; padding: 8px 2px; }
 .nokey p { margin: 0 0 10px; }
 
 .messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
