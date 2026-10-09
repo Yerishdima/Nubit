@@ -104,6 +104,7 @@
     [/month|мес|міс/, 730],
     [/year|год|лет|рік|рок/, 8760]
   ];
+  var COMPACT_HOURS = { s: 1 / 3600, m: 1 / 60, h: 1, d: 24, w: 168, mo: 730, y: 8760 };
   function hasChapters(description) {
     if (!description) return false;
     const lines = description.split("\n").filter((l) => /^\s*\(?\d{1,2}:\d{2}(?::\d{2})?\)?\s*[-–—:]?\s*\S/.test(l));

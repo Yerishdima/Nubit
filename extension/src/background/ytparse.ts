@@ -167,7 +167,8 @@ function listVideoFromLockup(l: Any): ListVideo | undefined {
   const title = runsText(meta?.title) ?? '';
   const rows: Any[] = meta?.metadata?.contentMetadataViewModel?.metadataRows ?? [];
   const parts: Any[] = rows.flatMap((row: Any) => row?.metadataParts ?? []);
-  const texts: string[] = parts.map((p: Any) => runsText(p?.text) ?? '').filter(Boolean);
+  // Prefer the accessibility label ("6 days ago", "201 million views") over the compact text ("6d ago", "201M views").
+  const texts: string[] = parts.map((p: Any) => (p?.accessibilityLabel as string | undefined) || runsText(p?.text) || '').filter(Boolean);
   const browseIds = deepFind(meta, 'browseEndpoint', 24, 3) as Any[];
   const viewText = texts.find((t) => /view|просмотр|перегляд/i.test(t));
   const ageText = texts.find((t) => /ago|назад|тому/i.test(t));

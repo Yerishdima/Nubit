@@ -1233,12 +1233,15 @@ var UNIT_HOURS = [
   [/month|мес|міс/, 730],
   [/year|год|лет|рік|рок/, 8760]
 ];
+var COMPACT_HOURS = { s: 1 / 3600, m: 1 / 60, h: 1, d: 24, w: 168, mo: 730, y: 8760 };
 function parseRelativeTimeHours(text) {
   if (!text) return void 0;
   const t = text.toLowerCase();
   const n = t.match(/(\d+)/);
   if (!n) return void 0;
   for (const [re, h] of UNIT_HOURS) if (re.test(t)) return parseInt(n[1], 10) * h;
+  const c = t.match(/(\d+)\s*(mo|s|m|h|d|w|y)(?![a-z])/);
+  if (c) return parseInt(c[1], 10) * COMPACT_HOURS[c[2]];
   return void 0;
 }
 function parseDuration(text) {
@@ -1583,7 +1586,7 @@ function listVideoFromLockup(l) {
   const title = runsText(meta?.title) ?? "";
   const rows = meta?.metadata?.contentMetadataViewModel?.metadataRows ?? [];
   const parts = rows.flatMap((row) => row?.metadataParts ?? []);
-  const texts = parts.map((p) => runsText(p?.text) ?? "").filter(Boolean);
+  const texts = parts.map((p) => p?.accessibilityLabel || runsText(p?.text) || "").filter(Boolean);
   const browseIds = deepFind(meta, "browseEndpoint", 24, 3);
   const viewText = texts.find((t) => /view|просмотр|перегляд/i.test(t));
   const ageText = texts.find((t) => /ago|назад|тому/i.test(t));

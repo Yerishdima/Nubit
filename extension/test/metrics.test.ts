@@ -45,6 +45,14 @@ test('parseRelativeTimeHours handles en/ru/uk units', () => {
   assert.equal(parseRelativeTimeHours('11 місяців тому'), 11 * 730);
   assert.equal(parseRelativeTimeHours('3 роки тому'), 3 * 8760);
   assert.equal(parseRelativeTimeHours('yesterday'), undefined);
+  // compact forms used by YouTube since 2025
+  assert.equal(parseRelativeTimeHours('5y ago'), 5 * 8760);
+  assert.equal(parseRelativeTimeHours('3mo ago'), 3 * 730);
+  assert.equal(parseRelativeTimeHours('2w ago'), 336);
+  assert.equal(parseRelativeTimeHours('6d ago'), 144);
+  assert.equal(parseRelativeTimeHours('11h ago'), 11);
+  assert.equal(parseRelativeTimeHours('45m ago'), 0.75);
+  assert.equal(parseRelativeTimeHours('Streamed 9h ago'), 9);
 });
 
 test('durations', () => {

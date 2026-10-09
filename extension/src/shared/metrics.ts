@@ -38,13 +38,18 @@ const UNIT_HOURS: Array<[RegExp, number]> = [
   [/year|год|лет|рік|рок/, 8760],
 ];
 
-/** "3 days ago", "Streamed 2 weeks ago", "5 часов назад", "4 дні тому" → hours. */
+// Compact forms YouTube started using in 2025: "5y ago", "3mo ago", "2w ago", "6d ago", "11h ago", "45m ago", "30s ago".
+const COMPACT_HOURS: Record<string, number> = { s: 1 / 3600, m: 1 / 60, h: 1, d: 24, w: 168, mo: 730, y: 8760 };
+
+/** "3 days ago", "Streamed 2 weeks ago", "5 часов назад", "4 дні тому", "5y ago", "6d ago" → hours. */
 export function parseRelativeTimeHours(text: string | undefined | null): number | undefined {
   if (!text) return undefined;
   const t = text.toLowerCase();
   const n = t.match(/(\d+)/);
   if (!n) return undefined;
   for (const [re, h] of UNIT_HOURS) if (re.test(t)) return parseInt(n[1], 10) * h;
+  const c = t.match(/(\d+)\s*(mo|s|m|h|d|w|y)(?![a-z])/);
+  if (c) return parseInt(c[1], 10) * COMPACT_HOURS[c[2]];
   return undefined;
 }
 
