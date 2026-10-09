@@ -36,6 +36,18 @@ export interface LocalTool {
   description: string;
 }
 
+/** A saved group of tags the creator applies to many videos. */
+export interface TagTemplate {
+  name: string;
+  tags: string[];
+}
+
+/** An image attached to a user message (base64, no data: prefix). */
+export interface ImageAttachment {
+  mediaType: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif';
+  data: string;
+}
+
 export interface Settings {
   language: Lang;
   provider: ProviderId;
@@ -59,6 +71,7 @@ export interface Settings {
   customApis: CustomApi[];
   localTools: LocalTool[];
   nativeHostName: string;
+  tagTemplates: TagTemplate[];
 }
 
 export interface CaptionTrack {
@@ -240,7 +253,7 @@ export interface ToolResult {
 }
 
 export type ChatMessage =
-  | { role: 'user'; content: string; /** Short label shown in the UI instead of the full content. */ display?: string }
+  | { role: 'user'; content: string; /** Short label shown in the UI instead of the full content. */ display?: string; images?: ImageAttachment[] }
   | {
       role: 'assistant';
       content: string;
@@ -266,13 +279,15 @@ export type QuickActionId =
   | 'studio_titles'
   | 'studio_description'
   | 'studio_tags'
-  | 'studio_compare';
+  | 'studio_compare'
+  | 'studio_magic_fill'
+  | 'studio_thumbnail';
 
 // ---- Messaging ----------------------------------------------------------
 
 /** Side panel → background (over the "chat" port). */
 export type PanelRequest =
-  | { type: 'send'; tabId: number | null; text: string; action?: QuickActionId; history: ChatMessage[]; includeContext: boolean }
+  | { type: 'send'; tabId: number | null; text: string; action?: QuickActionId; history: ChatMessage[]; includeContext: boolean; images?: ImageAttachment[] }
   | { type: 'abort' }
   | { type: 'hello'; tabId: number | null };
 
@@ -304,4 +319,5 @@ export type RuntimeMessage =
   | { type: 'analyzeKeyword'; query: string; lang: Lang }
   | { type: 'getVideoTags'; videoIds: string[] }
   | { type: 'studioInsert'; field: 'title' | 'description' | 'tags'; value: string | string[]; mode?: 'replace' | 'append' }
+  | { type: 'fetchImage'; url: string }
   | { type: 'pageContextSummary'; tabId: number | null };

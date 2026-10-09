@@ -116,8 +116,14 @@ export class OpenAICompatProvider implements Provider {
   private toChatMessages(system: string, messages: ChatMessage[]): Any[] {
     const out: Any[] = [{ role: 'system', content: system }];
     for (const m of messages) {
-      if (m.role === 'user') out.push({ role: 'user', content: m.content });
-      else if (m.role === 'assistant') {
+      if (m.role === 'user') {
+        if (m.images?.length) {
+          out.push({
+            role: 'user',
+            content: [...m.images.map((img) => ({ type: 'image_url', image_url: { url: `data:${img.mediaType};base64,${img.data}` } })), { type: 'text', text: m.content }],
+          });
+        } else out.push({ role: 'user', content: m.content });
+      } else if (m.role === 'assistant') {
         const raw = m.rawProvider === 'openai-chat' ? (m.raw as RawChatAssistant | undefined) : undefined;
         const toolCalls =
           raw?.tool_calls ??
@@ -178,8 +184,14 @@ export class OpenAICompatProvider implements Provider {
   private toResponsesInput(messages: ChatMessage[]): Any[] {
     const out: Any[] = [];
     for (const m of messages) {
-      if (m.role === 'user') out.push({ role: 'user', content: m.content });
-      else if (m.role === 'assistant') {
+      if (m.role === 'user') {
+        if (m.images?.length) {
+          out.push({
+            role: 'user',
+            content: [...m.images.map((img) => ({ type: 'input_image', image_url: `data:${img.mediaType};base64,${img.data}` })), { type: 'input_text', text: m.content }],
+          });
+        } else out.push({ role: 'user', content: m.content });
+      } else if (m.role === 'assistant') {
         const raw = m.rawProvider === 'openai-responses' && Array.isArray(m.raw) ? (m.raw as Any[]) : undefined;
         if (raw?.length) {
           out.push(...raw);

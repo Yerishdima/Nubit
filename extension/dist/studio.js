@@ -34,7 +34,8 @@
     computeOutliers: true,
     customApis: [],
     localTools: DEFAULT_LOCAL_TOOLS,
-    nativeHostName: "com.nubit.host"
+    nativeHostName: "com.nubit.host",
+    tagTemplates: []
   };
   var KEY = "settings";
   async function loadSettings() {
@@ -44,6 +45,9 @@
     const names = new Set(merged.localTools.map((t2) => t2.name));
     for (const t2 of DEFAULT_LOCAL_TOOLS) if (!names.has(t2.name)) merged.localTools.push({ ...t2 });
     return merged;
+  }
+  async function saveSettings(settings2) {
+    await chrome.storage.local.set({ [KEY]: settings2 });
   }
   function onSettingsChanged(cb) {
     chrome.storage.onChanged.addListener((changes, area) => {
@@ -312,7 +316,21 @@
       competitors: "\u0422\u043E\u043F \u043F\u043E \u0437\u0430\u043F\u0440\u043E\u0441\u0443",
       tagsCount: "\u0442\u0435\u0433\u043E\u0432",
       noTitle: "\u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u0432\u0432\u043E\u0434\u0438\u0442\u044C \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u2014 \u043E\u0446\u0435\u043D\u043A\u0430 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C.",
-      openSettings: "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438"
+      openSettings: "\u041E\u0442\u043A\u0440\u044B\u0442\u044C \u043D\u0430\u0441\u0442\u0440\u043E\u0439\u043A\u0438",
+      gen_magic: "\u{1FA84} \u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0432\u0441\u0451",
+      gen_thumb: "\u{1F5BC} \u041E\u0446\u0435\u043D\u0438\u0442\u044C \u043F\u0440\u0435\u0432\u044C\u044E",
+      templates: "\u0428\u0430\u0431\u043B\u043E\u043D\u044B \u0442\u0435\u0433\u043E\u0432",
+      tpl_apply: "\u041F\u0440\u0438\u043C\u0435\u043D\u0438\u0442\u044C",
+      tpl_save: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0442\u0435\u043A\u0443\u0449\u0438\u0435 \u0442\u0435\u0433\u0438 \u043A\u0430\u043A \u0448\u0430\u0431\u043B\u043E\u043D",
+      tpl_name: "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0448\u0430\u0431\u043B\u043E\u043D\u0430:",
+      tpl_del: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0448\u0430\u0431\u043B\u043E\u043D",
+      noThumb: "\u041F\u0440\u0435\u0432\u044C\u044E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E: \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0443 \u0432 \u043F\u043E\u043B\u0435 \xAB\u0417\u043D\u0430\u0447\u043E\u043A\xBB \u0438 \u043F\u043E\u0432\u0442\u043E\u0440\u0438\u0442\u0435.",
+      thumbLoading: "\u0447\u0438\u0442\u0430\u044E \u043F\u0440\u0435\u0432\u044C\u044E\u2026",
+      magicDone: "\u0417\u0430\u043F\u043E\u043B\u043D\u0435\u043D\u043E: \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0438 \u0442\u0435\u0433\u0438. \u041F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0438 \u043E\u0442\u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u0443\u0439\u0442\u0435.",
+      thumbText: "\u0422\u0435\u043A\u0441\u0442 \u043D\u0430 \u043F\u0440\u0435\u0432\u044C\u044E",
+      strengths: "\u0421\u0438\u043B\u044C\u043D\u044B\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B",
+      issues: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u044B",
+      textIdeas: "\u0418\u0434\u0435\u0438 \u0442\u0435\u043A\u0441\u0442\u0430"
     },
     en: {
       title: "Nubit \xB7 optimization",
@@ -354,7 +372,21 @@
       competitors: "Top results",
       tagsCount: "tags",
       noTitle: "Start typing a title \u2014 the score will appear here.",
-      openSettings: "Open settings"
+      openSettings: "Open settings",
+      gen_magic: "\u{1FA84} Magic fill",
+      gen_thumb: "\u{1F5BC} Review thumbnail",
+      templates: "Tag templates",
+      tpl_apply: "Apply",
+      tpl_save: "Save current tags as a template",
+      tpl_name: "Template name:",
+      tpl_del: "Delete template",
+      noThumb: "No thumbnail found: upload one in the Thumbnail field and retry.",
+      thumbLoading: "reading the thumbnail\u2026",
+      magicDone: "Filled in: title, description and tags. Review and edit.",
+      thumbText: "Text on thumbnail",
+      strengths: "Strengths",
+      issues: "Issues",
+      textIdeas: "Text ideas"
     }
   };
   var settings;
@@ -530,19 +562,28 @@ ${text}` : text);
            ${state.showTitleChecks ? checksHtml(ts.checks) : ""}
            <div class="preview"><div class="muted">${t("preview")}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + "\u2026" : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split("\n").slice(0, 2).join("\n").slice(0, 150))}</div>` : ""}</div>` : `<div class="muted">${t("noTitle")}</div>`}
   </div>`);
+    const tpls = settings.tagTemplates ?? [];
     body.push(`<div class="sec"><h4>${t("descSec")} <span class="muted">${d.description.length} ${t("chars")}</span> \xB7 ${t("tagsSec")} <span class="muted">${d.tags.length}</span><span class="pill ${pillClass(seo.score)}">SEO ${seo.score}</span></h4>
     <div class="row"><div class="bar"><i style="width:${seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t("show")}</button></div>
     ${state.showSeoChecks ? checksHtml(seo.checks) : ""}
+    <div class="row" style="margin-top:6px">
+      <select class="kw" id="tpl" title="${t("templates")}"><option value="">${t("templates")}\u2026</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join("")}</select>
+      <button class="btn small" data-act="tpl-apply">${t("tpl_apply")}</button>
+      <button class="btn small" data-act="tpl-del" title="${t("tpl_del")}">\u2715</button>
+    </div>
+    ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t("tpl_save")}</button></div>` : ""}
   </div>`);
     const acts = [
+      ["studio_magic_fill", "gen_magic"],
       ["studio_titles", "gen_titles"],
       ["studio_description", "gen_description"],
       ["studio_tags", "gen_tags"],
-      ["studio_compare", "gen_compare"]
+      ["studio_compare", "gen_compare"],
+      ["studio_thumbnail", "gen_thumb"]
     ];
     body.push(`<div class="sec"><h4>${t("ai")}</h4>
     ${ready ? "" : `<div class="muted">${t("noKey")} <button class="btn small" data-act="settings">${t("openSettings")}</button></div>`}
-    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === "studio_compare" ? "" : "primary"}" data-act="ai" data-val="${a}" ${!ready || state.running ? "disabled" : ""}>${t(k)}</button>`).join("")}
+    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === "studio_compare" || a === "studio_thumbnail" ? "" : "primary"}" data-act="ai" data-val="${a}" ${!ready || state.running ? "disabled" : ""}>${t(k)}</button>`).join("")}
       ${state.running ? `<button class="btn" data-act="stop">${t("stop")}</button>` : ""}</div>
     ${acts.map(([a]) => resultHtml(a, state.ai[a], existing)).join("")}
   </div>`);
@@ -588,6 +629,18 @@ ${text}` : text);
       const tags = p.tags.map((x) => String(x)).filter(Boolean);
       return `<div class="result"><div class="row"><span class="muted">${tags.length} ${t("tagsCount")} \xB7 ${tags.join(", ").length} ${t("chars")}</span><span style="flex:1"></span><button class="btn small primary" data-act="addtags" data-val="${escapeHtml(JSON.stringify(tags))}">${t("addAll")}</button></div>
       <div class="chips">${tags.map((x) => chip(x, "addtag", "", existing.has(x.toLowerCase()))).join("")}</div></div>`;
+    }
+    if (action === "studio_magic_fill" && (p.title || p.description || p.tags)) {
+      return `<div class="result"><div class="muted">${t("magicDone")}</div>${p.title ? `<div class="item"><div class="t">${escapeHtml(String(p.title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.title))}">${t("insert")}</button></div>` : ""}</div>`;
+    }
+    if (action === "studio_thumbnail" && (typeof p.score === "number" || p.verdict)) {
+      const score = Number(p.score ?? 0);
+      const list = (title, arr) => Array.isArray(arr) && arr.length ? `<div class="muted" style="margin-top:6px">${title}:</div><ol class="fixes">${arr.map((x) => `<li>${escapeHtml(String(x))}</li>`).join("")}</ol>` : "";
+      return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t("gen_thumb").replace(/^\S+\s/, "")} ${score}</span></div>
+      <div style="margin-top:6px">${escapeHtml(String(p.verdict ?? ""))}</div>
+      ${p.text_on_thumbnail ? `<div class="muted" style="margin-top:4px">${t("thumbText")}: \xAB${escapeHtml(String(p.text_on_thumbnail))}\xBB</div>` : ""}
+      ${list(t("strengths"), p.strengths)}${list(t("issues"), p.issues)}${list(t("fixes"), p.suggestions)}${list(t("textIdeas"), p.text_ideas)}
+    </div>`;
     }
     if (action === "studio_compare" && (typeof p.score === "number" || p.verdict)) {
       const score = Number(p.score ?? 0);
@@ -671,12 +724,69 @@ ${text}` : text);
     port.postMessage({ type: "hello", tabId: null });
     return port;
   }
-  function runAi(action) {
+  function runAi(action, images) {
     if (state.running) return;
     state.ai[action] = { status: "running", text: "" };
     state.running = action;
     render();
-    ensurePort().postMessage({ type: "send", tabId: null, text: "", action, history: [], includeContext: true });
+    ensurePort().postMessage({ type: "send", tabId: null, text: "", action, history: [], includeContext: true, images });
+  }
+  var THUMB_SEL = [
+    "ytcp-thumbnail-uploader img",
+    "ytcp-thumbnails-compact-editor-uploader img",
+    "ytcp-video-thumbnail-with-info img",
+    "#thumbnail-editor img",
+    "ytcp-thumbnail-editor img",
+    "#still-picture img",
+    'ytcp-uploads-dialog img[src*="ytimg"]',
+    'img[src^="blob:"]'
+  ];
+  async function captureThumbnail() {
+    const imgs = THUMB_SEL.flatMap((s) => Array.from(document.querySelectorAll(s))).filter((i) => i.src && !/data:image\/svg/.test(i.src));
+    if (!imgs.length) return null;
+    imgs.sort((a, b) => b.naturalWidth * b.naturalHeight - a.naturalWidth * a.naturalHeight);
+    const src = imgs[0].src;
+    const toB64 = async (blob) => {
+      const buf = new Uint8Array(await blob.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < buf.length; i += 32768) bin += String.fromCharCode(...buf.subarray(i, i + 32768));
+      const mediaType = /^image\/(jpeg|png|webp|gif)$/.test(blob.type) ? blob.type : "image/jpeg";
+      return { mediaType, data: btoa(bin) };
+    };
+    try {
+      const res = await fetch(src);
+      if (res.ok) return await toB64(await res.blob());
+    } catch {
+    }
+    if (/^https?:/.test(src)) {
+      const r = await chrome.runtime.sendMessage({ type: "fetchImage", url: src }).catch(() => null);
+      if (r && "data" in r) return { mediaType: r.mediaType, data: r.data };
+    }
+    try {
+      const c = document.createElement("canvas");
+      c.width = imgs[0].naturalWidth || imgs[0].width;
+      c.height = imgs[0].naturalHeight || imgs[0].height;
+      c.getContext("2d").drawImage(imgs[0], 0, 0);
+      const dataUrl = c.toDataURL("image/jpeg", 0.9);
+      return { mediaType: "image/jpeg", data: dataUrl.split(",")[1] };
+    } catch {
+      return null;
+    }
+  }
+  async function runThumbnailReview() {
+    if (state.running) return;
+    state.ai.studio_thumbnail = { status: "running", text: "", progress: t("thumbLoading") };
+    state.running = "studio_thumbnail";
+    render();
+    const img = await captureThumbnail();
+    if (!img) {
+      state.ai.studio_thumbnail = { status: "error", text: "", error: t("noThumb") };
+      state.running = void 0;
+      render();
+      return;
+    }
+    state.running = void 0;
+    runAi("studio_thumbnail", [img]);
   }
   function onPanelEvent(ev) {
     const action = state.running;
@@ -711,8 +821,15 @@ ${text}` : text);
         }
         state.running = void 0;
         render();
+        if (action === "studio_magic_fill" && r.status === "done" && r.parsed) void applyMagicFill(r.parsed);
         break;
     }
+  }
+  async function applyMagicFill(p) {
+    if (typeof p.title === "string" && p.title.trim()) await insert("title", p.title.trim());
+    if (typeof p.description === "string" && p.description.trim()) await insert("description", p.description.trim());
+    if (Array.isArray(p.tags) && p.tags.length) await insert("tags", p.tags.map((x) => String(x)));
+    refreshDraft();
   }
   function parseJson(text) {
     const cleaned = text.replace(/```(?:json)?/gi, "");
@@ -775,8 +892,37 @@ ${text}` : text);
         render();
         break;
       case "ai":
-        runAi(val);
+        if (val === "studio_thumbnail") void runThumbnailReview();
+        else runAi(val);
         break;
+      case "tpl-apply": {
+        const idx = Number(root?.querySelector("#tpl")?.value ?? "");
+        const tpl = settings.tagTemplates?.[idx];
+        if (tpl) {
+          await insert("tags", tpl.tags);
+          refreshDraft();
+        }
+        break;
+      }
+      case "tpl-save": {
+        const name = window.prompt(t("tpl_name"), state.focusKeyword || "")?.trim();
+        if (!name) break;
+        const list = (settings.tagTemplates ?? []).filter((x) => x.name !== name);
+        list.push({ name, tags: [...state.draft.tags] });
+        settings = { ...settings, tagTemplates: list };
+        await saveSettings(settings);
+        render();
+        break;
+      }
+      case "tpl-del": {
+        const idx = Number(root?.querySelector("#tpl")?.value ?? "");
+        if (!Number.isFinite(idx) || !settings.tagTemplates?.[idx]) break;
+        const list = settings.tagTemplates.filter((_x, i) => i !== idx);
+        settings = { ...settings, tagTemplates: list };
+        await saveSettings(settings);
+        render();
+        break;
+      }
       case "stop":
         port?.postMessage({ type: "abort" });
         break;

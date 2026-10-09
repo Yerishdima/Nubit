@@ -91,6 +91,8 @@ chrome.runtime.onMessage.addListener((msg: RuntimeMessage, sender, sendResponse)
       return reply(keywordReport(youtube, msg.query, msg.lang, 20));
     case 'getVideoTags':
       return reply(videoTags(youtube, msg.videoIds));
+    case 'fetchImage':
+      return reply(fetchImage(msg.url));
     case 'studioInsert': {
       // Relay from the side panel to the Studio tab's content script.
       return reply(activeYouTubeTabId().then((id) => (id === null ? { error: 'No YouTube Studio tab is active' } : chrome.tabs.sendMessage(id, msg))));
@@ -111,6 +113,18 @@ async function openPanel(tabId: number, action?: QuickActionId): Promise<void> {
     port.postMessage({ type: 'run_action', action } satisfies PanelEvent);
   }
   await chrome.sidePanel.open({ tabId });
+}
+
+/** Downloads an image (e.g. a Studio thumbnail on i.ytimg.com) and returns it as base64. */
+async function fetchImage(url: string): Promise<{ mediaType: string; data: string }> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} loading image`);
+  const blob = await res.blob();
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  const mediaType = /^image\/(jpeg|png|webp|gif)$/.test(blob.type) ? blob.type : 'image/jpeg';
+  return { mediaType, data: btoa(bin) };
 }
 
 /** Lists models of an OpenAI-compatible service (GET {base}/models). */
@@ -214,7 +228,7 @@ chrome.runtime.onConnect.addListener((port) => {
           content += `\n\n${renderPageContext(ctx)}`;
           send({ type: 'context', summary: contextSummary(ctx, settings), kind: ctx?.kind ?? 'other' });
         }
-        const userMsg: ChatMessage = { role: 'user', content, display: display ?? (msg.action ? actionLabel(msg.action, settings) : undefined) };
+        const userMsg: ChatMessage = { role: 'user', content, display: display ?? (msg.action ? actionLabel(msg.action, settings) : undefined), images: msg.images?.length ? msg.images : undefined };
         send({ type: 'user', message: userMsg });
         const history = [...msg.history, userMsg];
         await runAgent({
@@ -258,6 +272,8 @@ function actionLabel(action: QuickActionId, s: Settings): string {
     studio_description: ['Описание для черновика', 'Description for the draft'],
     studio_tags: ['Теги для черновика', 'Tags for the draft'],
     studio_compare: ['Сравнение названия с конкурентами', 'Title vs competitors'],
+    studio_magic_fill: ['Заполнить всё', 'Magic fill'],
+    studio_thumbnail: ['Оценка превью', 'Thumbnail review'],
   };
   return labels[action][ru ? 0 : 1];
 }

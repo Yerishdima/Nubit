@@ -376,6 +376,7 @@ function collect(): Settings {
       .map((a) => ({ ...a, id: a.id || `api_${Date.now()}`, name: a.name.trim().replace(/\s+/g, '_'), baseUrl: a.baseUrl.trim(), description: a.description.trim() }))
       .filter((a) => a.name || a.baseUrl),
     nativeHostName: settings.nativeHostName || DEFAULT_SETTINGS.nativeHostName,
+    tagTemplates: settings.tagTemplates ?? [],
   };
 }
 

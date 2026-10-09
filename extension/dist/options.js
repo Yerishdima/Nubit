@@ -40,7 +40,8 @@
     computeOutliers: true,
     customApis: [],
     localTools: DEFAULT_LOCAL_TOOLS,
-    nativeHostName: "com.nubit.host"
+    nativeHostName: "com.nubit.host",
+    tagTemplates: []
   };
   var KEY = "settings";
   async function loadSettings() {
@@ -401,7 +402,8 @@
       computeOutliers: $("computeOutliers").checked,
       localTools: localTools.map((t) => ({ name: t.name.trim(), path: t.path.trim(), description: t.description.trim() })).filter((t) => t.name),
       customApis: customApis.map((a) => ({ ...a, id: a.id || `api_${Date.now()}`, name: a.name.trim().replace(/\s+/g, "_"), baseUrl: a.baseUrl.trim(), description: a.description.trim() })).filter((a) => a.name || a.baseUrl),
-      nativeHostName: settings.nativeHostName || DEFAULT_SETTINGS.nativeHostName
+      nativeHostName: settings.nativeHostName || DEFAULT_SETTINGS.nativeHostName,
+      tagTemplates: settings.tagTemplates ?? []
     };
   }
   async function save() {

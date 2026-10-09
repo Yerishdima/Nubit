@@ -19,7 +19,15 @@ export function toAnthropicMessages(messages: ChatMessage[], model: string): Bet
   const out: BetaMessageParam[] = [];
   for (const m of messages) {
     if (m.role === 'user') {
-      out.push({ role: 'user', content: m.content });
+      if (m.images?.length) {
+        out.push({
+          role: 'user',
+          content: [
+            ...m.images.map((img) => ({ type: 'image' as const, source: { type: 'base64' as const, media_type: img.mediaType, data: img.data } })),
+            { type: 'text' as const, text: m.content },
+          ],
+        });
+      } else out.push({ role: 'user', content: m.content });
     } else if (m.role === 'assistant') {
       if (m.rawProvider === 'anthropic' && Array.isArray(m.raw) && m.raw.length) {
         let blocks = m.raw as BetaContentBlockParam[];

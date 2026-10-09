@@ -1181,7 +1181,8 @@ var DEFAULT_SETTINGS = {
   computeOutliers: true,
   customApis: [],
   localTools: DEFAULT_LOCAL_TOOLS,
-  nativeHostName: "com.nubit.host"
+  nativeHostName: "com.nubit.host",
+  tagTemplates: []
 };
 var KEY = "settings";
 async function loadSettings() {
@@ -18577,7 +18578,15 @@ function toAnthropicMessages(messages, model) {
   const out = [];
   for (const m of messages) {
     if (m.role === "user") {
-      out.push({ role: "user", content: m.content });
+      if (m.images?.length) {
+        out.push({
+          role: "user",
+          content: [
+            ...m.images.map((img) => ({ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data } })),
+            { type: "text", text: m.content }
+          ]
+        });
+      } else out.push({ role: "user", content: m.content });
     } else if (m.role === "assistant") {
       if (m.rawProvider === "anthropic" && Array.isArray(m.raw) && m.raw.length) {
         let blocks2 = m.raw;
@@ -18774,8 +18783,14 @@ var OpenAICompatProvider = class {
   toChatMessages(system, messages) {
     const out = [{ role: "system", content: system }];
     for (const m of messages) {
-      if (m.role === "user") out.push({ role: "user", content: m.content });
-      else if (m.role === "assistant") {
+      if (m.role === "user") {
+        if (m.images?.length) {
+          out.push({
+            role: "user",
+            content: [...m.images.map((img) => ({ type: "image_url", image_url: { url: `data:${img.mediaType};base64,${img.data}` } })), { type: "text", text: m.content }]
+          });
+        } else out.push({ role: "user", content: m.content });
+      } else if (m.role === "assistant") {
         const raw = m.rawProvider === "openai-chat" ? m.raw : void 0;
         const toolCalls = raw?.tool_calls ?? (m.toolCalls ?? []).map((c) => ({ id: c.id, type: "function", function: { name: c.name, arguments: JSON.stringify(c.input ?? {}) } }));
         const msg = { role: "assistant", content: raw?.content ?? m.content ?? "" };
@@ -18829,8 +18844,14 @@ var OpenAICompatProvider = class {
   toResponsesInput(messages) {
     const out = [];
     for (const m of messages) {
-      if (m.role === "user") out.push({ role: "user", content: m.content });
-      else if (m.role === "assistant") {
+      if (m.role === "user") {
+        if (m.images?.length) {
+          out.push({
+            role: "user",
+            content: [...m.images.map((img) => ({ type: "input_image", image_url: `data:${img.mediaType};base64,${img.data}` })), { type: "input_text", text: m.content }]
+          });
+        } else out.push({ role: "user", content: m.content });
+      } else if (m.role === "assistant") {
         const raw = m.rawProvider === "openai-responses" && Array.isArray(m.raw) ? m.raw : void 0;
         if (raw?.length) {
           out.push(...raw);
@@ -19021,6 +19042,14 @@ var ACTION_PROMPTS = {
   studio_compare: {
     ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context). \u041E\u0446\u0435\u043D\u0438, \u043D\u0430\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0435\u0433\u043E \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u0441\u044F \u0441\u0440\u0435\u0434\u0438 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432: \u0432\u044B\u0437\u043E\u0432\u0438 search_youtube \u043F\u043E \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441\u0443 (\u0438\u043B\u0438 \u043F\u043E \u0441\u0443\u0442\u0438 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F) \u0441 max_results 12 \u0438 analyze_keyword. \u0421\u0440\u0430\u0432\u043D\u0438 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u0441 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F\u043C\u0438 \u0442\u043E\u043F-\u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u043E\u0432: \u043F\u043E\u0432\u0442\u043E\u0440\u044F\u0435\u0442 \u043B\u0438 \u043E\u043D\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u044B, \u0435\u0441\u0442\u044C \u043B\u0438 \u0443\u043D\u0438\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0443\u0433\u043E\u043B, \u0432\u0438\u0434\u043D\u043E \u043B\u0438 \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u0435 \u0441\u043B\u043E\u0432\u043E, \u043A\u0430\u043A\u043E\u0432\u0430 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0446\u0438\u044F. \u0414\u0430\u0439 \u043E\u0446\u0435\u043D\u043A\u0443 \u0432\u044B\u0434\u0435\u043B\u044F\u0435\u043C\u043E\u0441\u0442\u0438 0\u2013100, 3\u20135 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u043E\u043A \u0438 3 \u0430\u043B\u044C\u0442\u0435\u0440\u043D\u0430\u0442\u0438\u0432\u043D\u044B\u0445 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F, \u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0441\u0438\u043B\u044C\u043D\u0435\u0435 \u043E\u0442\u043B\u0438\u0447\u0430\u044E\u0442\u0441\u044F. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"score":0-100,"verdict":"1\u20132 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0435\u043D\u0438\u044F","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}',
     en: 'The creator is filling the upload form in YouTube Studio (draft in page_context). Judge how much their title will stand out among competitors: call search_youtube for the focus keyword (or the gist of the title) with max_results 12 and analyze_keyword. Compare the draft title with the top results: does it repeat their patterns, does it have a unique angle, is the keyword visible, how strong is the competition. Give a stand-out score 0\u2013100, 3\u20135 concrete fixes and 3 alternative titles that differ more. Answer with JSON ONLY: {"score":0-100,"verdict":"1\u20132 sentences","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}'
+  },
+  studio_magic_fill: {
+    ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context: \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435, \u0442\u0435\u0433\u0438, \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441). \u0417\u0430\u043F\u043E\u043B\u043D\u0438 \u043C\u0435\u0442\u0430\u0434\u0430\u043D\u043D\u044B\u0435 \u0446\u0435\u043B\u0438\u043A\u043E\u043C. \u0415\u0441\u043B\u0438 \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C \u2014 \u043E\u0434\u0438\u043D \u0432\u044B\u0437\u043E\u0432 analyze_keyword \u0438\u043B\u0438 suggest_keywords, \u0447\u0442\u043E\u0431\u044B \u043E\u043F\u0435\u0440\u0435\u0442\u044C\u0441\u044F \u043D\u0430 \u0440\u0435\u0430\u043B\u044C\u043D\u044B\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u044B. \u0412\u0435\u0440\u043D\u0438: \u043B\u0443\u0447\u0448\u0435\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 (\u2264 70 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432, \u043A\u043B\u044E\u0447 \u0432 \u043D\u0430\u0447\u0430\u043B\u0435, \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u0438\u043A\u0430), \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 600\u20131500 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 (\u043F\u0435\u0440\u0432\u044B\u0435 2 \u0441\u0442\u0440\u043E\u043A\u0438 \u2014 \u043A\u043B\u044E\u0447 \u0438 \u043A\u0440\u044E\u0447\u043E\u043A, \u0430\u0431\u0437\u0430\u0446\u044B \u043F\u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u044E, \u0437\u0430\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u0433\u043B\u0430\u0432 \u0435\u0441\u043B\u0438 \u0443\u043C\u0435\u0441\u0442\u043D\u043E, 3 \u0445\u044D\u0448\u0442\u0435\u0433\u0430 \u0432 \u043A\u043E\u043D\u0446\u0435; \u0441\u043E\u0445\u0440\u0430\u043D\u0438 \u0441\u0441\u044B\u043B\u043A\u0438/\u0442\u0430\u0439\u043C\u043A\u043E\u0434\u044B \u0438\u0437 \u0442\u0435\u043A\u0443\u0449\u0435\u0433\u043E \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u044F), 15\u201320 \u0442\u0435\u0433\u043E\u0432 (\u0442\u043E\u0447\u043D\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441, \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u044B, \u0448\u0438\u0440\u043E\u043A\u0438\u0435 \u0442\u0435\u043C\u044B, \xAB\u0445\u0432\u043E\u0441\u0442\u044B\xBB; \u0434\u043E 450 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432). \u0412\u0441\u0451 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"title":"...","description":"...","tags":["..."]}',
+    en: `The creator is filling the upload form in YouTube Studio (draft in page_context: title, description, tags, focus keyword). Fill in all metadata. If a focus keyword exists, make one analyze_keyword or suggest_keywords call to ground it in real queries. Return: the best title (\u2264 70 chars, keyword first, specific), a 600\u20131500 character description (first 2 lines keyword + hook, paragraphs on the content, chapters placeholder if useful, 3 hashtags at the end; keep links/timestamps from the current description), 15\u201320 tags (exact query, variants, broad topics, long-tails; under 450 chars). All in the draft's language. Answer with JSON ONLY: {"title":"...","description":"...","tags":["..."]}`
+  },
+  studio_thumbnail: {
+    ru: '\u041A \u0441\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u044E \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0430 \u043A\u0430\u0440\u0442\u0438\u043D\u043A\u0430 \u2014 \u043F\u0440\u0435\u0432\u044C\u044E (thumbnail) \u0432\u0438\u0434\u0435\u043E \u0438\u0437 YouTube Studio; \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F/\u043E\u043F\u0438\u0441\u0430\u043D\u0438\u044F \u2014 \u0432 page_context. \u041E\u0446\u0435\u043D\u0438 \u043F\u0440\u0435\u0432\u044C\u044E \u043A\u0430\u043A \u044D\u043A\u0441\u043F\u0435\u0440\u0442 \u043F\u043E CTR \u043D\u0430 YouTube: \u0447\u0438\u0442\u0430\u0435\u043C\u043E\u0441\u0442\u044C \u043F\u0440\u0438 \u0440\u0430\u0437\u043C\u0435\u0440\u0435 168\xD794 (\u043C\u043E\u0431\u0438\u043B\u044C\u043D\u0430\u044F \u043B\u0435\u043D\u0442\u0430), \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442 \u0438 \u0444\u043E\u043A\u0443\u0441, \u043B\u0438\u0446\u043E/\u044D\u043C\u043E\u0446\u0438\u044F, \u043A\u043E\u043B\u0438\u0447\u0435\u0441\u0442\u0432\u043E \u0438 \u0440\u0430\u0437\u043C\u0435\u0440 \u0442\u0435\u043A\u0441\u0442\u0430 (\u2264 3\u20134 \u0441\u043B\u043E\u0432\u0430), \u0434\u0443\u0431\u043B\u0438\u0440\u0443\u0435\u0442 \u043B\u0438 \u0442\u0435\u043A\u0441\u0442 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 (\u043F\u043B\u043E\u0445\u043E) \u0438\u043B\u0438 \u0434\u043E\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0435\u0433\u043E (\u0445\u043E\u0440\u043E\u0448\u043E), \u0446\u0432\u0435\u0442\u043E\u0432\u043E\u0439 \u0430\u043A\u0446\u0435\u043D\u0442, \u0437\u0430\u0433\u0440\u043E\u043C\u043E\u0436\u0434\u0451\u043D\u043D\u043E\u0441\u0442\u044C, \u0441\u043E\u043E\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0438\u0435 \u0442\u0435\u043C\u0435. \u0414\u0430\u0439 \u043E\u0446\u0435\u043D\u043A\u0443 0\u2013100, 3 \u0441\u0438\u043B\u044C\u043D\u044B\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B, 3\u20135 \u043F\u0440\u043E\u0431\u043B\u0435\u043C, 3\u20135 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u043E\u043A \u0438 3 \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u0430 \u043A\u043E\u0440\u043E\u0442\u043A\u043E\u0433\u043E \u0442\u0435\u043A\u0441\u0442\u0430 \u043D\u0430 \u043F\u0440\u0435\u0432\u044C\u044E. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"score":0-100,"verdict":"1\u20132 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0435\u043D\u0438\u044F","text_on_thumbnail":"\u0447\u0442\u043E \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u043E \u0441\u0435\u0439\u0447\u0430\u0441 \u0438\u043B\u0438 \u043F\u0443\u0441\u0442\u043E","strengths":["..."],"issues":["..."],"suggestions":["..."],"text_ideas":["..."]}',
+    en: 'The message has an image attached \u2014 the video thumbnail from YouTube Studio; the title/description draft is in page_context. Evaluate the thumbnail as a YouTube CTR expert: legibility at 168\xD794 (mobile feed), contrast and focal point, face/emotion, amount and size of text (\u2264 3\u20134 words), whether the text duplicates the title (bad) or complements it (good), color accent, clutter, fit with the topic. Give a 0\u2013100 score, 3 strengths, 3\u20135 issues, 3\u20135 concrete fixes and 3 short text ideas. Answer with JSON ONLY: {"score":0-100,"verdict":"1\u20132 sentences","text_on_thumbnail":"current text or empty","strengths":["..."],"issues":["..."],"suggestions":["..."],"text_ideas":["..."]}'
   },
   studio_tags: {
     ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context). \u0415\u0441\u043B\u0438 \u0435\u0441\u0442\u044C \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441, \u0432\u044B\u0437\u043E\u0432\u0438 suggest_keywords \u0441 expand=true \u0438, \u043F\u043E \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438, search_youtube \u043F\u043E \u0437\u0430\u043F\u0440\u043E\u0441\u0443, \u0447\u0442\u043E\u0431\u044B \u0443\u0432\u0438\u0434\u0435\u0442\u044C, \u043A\u0430\u043A \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B \u043D\u0430\u0437\u044B\u0432\u0430\u044E\u0442 \u0442\u0435\u043C\u0443. \u0421\u043E\u0441\u0442\u0430\u0432\u044C 20 \u0442\u0435\u0433\u043E\u0432 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430: \u0442\u043E\u0447\u043D\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441, \u0435\u0433\u043E \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u044B \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u0438\u044F, \u0448\u0438\u0440\u043E\u043A\u0438\u0435 \u0442\u0435\u043C\u044B, 3\u20135 \u0434\u043B\u0438\u043D\u043D\u044B\u0445 \xAB\u0445\u0432\u043E\u0441\u0442\u043E\u0432\xBB. \u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0441\u0430\u043C\u044B\u0435 \u0432\u0430\u0436\u043D\u044B\u0435. \u0421\u0443\u043C\u043C\u0430\u0440\u043D\u043E \u0434\u043E 450 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"tags":["...","..."]}',
@@ -19667,6 +19696,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return reply(keywordReport(youtube, msg.query, msg.lang, 20));
     case "getVideoTags":
       return reply(videoTags(youtube, msg.videoIds));
+    case "fetchImage":
+      return reply(fetchImage(msg.url));
     case "studioInsert": {
       return reply(activeYouTubeTabId().then((id) => id === null ? { error: "No YouTube Studio tab is active" } : chrome.tabs.sendMessage(id, msg)));
     }
@@ -19684,6 +19715,16 @@ async function openPanel(tabId, action) {
     port.postMessage({ type: "run_action", action });
   }
   await chrome.sidePanel.open({ tabId });
+}
+async function fetchImage(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} loading image`);
+  const blob = await res.blob();
+  const buf = new Uint8Array(await blob.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < buf.length; i += 32768) bin += String.fromCharCode(...buf.subarray(i, i + 32768));
+  const mediaType = /^image\/(jpeg|png|webp|gif)$/.test(blob.type) ? blob.type : "image/jpeg";
+  return { mediaType, data: btoa(bin) };
 }
 async function fetchModels(baseUrl, apiKey) {
   const base = baseUrl.trim().replace(/\/+$/, "");
@@ -19780,7 +19821,7 @@ User note: ${content}` : "");
 ${renderPageContext(ctx)}`;
           send({ type: "context", summary: contextSummary(ctx, settings), kind: ctx?.kind ?? "other" });
         }
-        const userMsg = { role: "user", content, display: display ?? (msg.action ? actionLabel(msg.action, settings) : void 0) };
+        const userMsg = { role: "user", content, display: display ?? (msg.action ? actionLabel(msg.action, settings) : void 0), images: msg.images?.length ? msg.images : void 0 };
         send({ type: "user", message: userMsg });
         const history = [...msg.history, userMsg];
         await runAgent({
@@ -19821,7 +19862,9 @@ function actionLabel(action, s) {
     studio_titles: ["\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Titles for the draft"],
     studio_description: ["\u041E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Description for the draft"],
     studio_tags: ["\u0422\u0435\u0433\u0438 \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Tags for the draft"],
-    studio_compare: ["\u0421\u0440\u0430\u0432\u043D\u0435\u043D\u0438\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0441 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430\u043C\u0438", "Title vs competitors"]
+    studio_compare: ["\u0421\u0440\u0430\u0432\u043D\u0435\u043D\u0438\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0441 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430\u043C\u0438", "Title vs competitors"],
+    studio_magic_fill: ["\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u044C \u0432\u0441\u0451", "Magic fill"],
+    studio_thumbnail: ["\u041E\u0446\u0435\u043D\u043A\u0430 \u043F\u0440\u0435\u0432\u044C\u044E", "Thumbnail review"]
   };
   return labels[action][ru ? 0 : 1];
 }

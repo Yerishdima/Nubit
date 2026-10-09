@@ -34,7 +34,8 @@
     computeOutliers: true,
     customApis: [],
     localTools: DEFAULT_LOCAL_TOOLS,
-    nativeHostName: "com.nubit.host"
+    nativeHostName: "com.nubit.host",
+    tagTemplates: []
   };
   var KEY = "settings";
   async function loadSettings() {

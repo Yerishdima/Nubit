@@ -169,3 +169,33 @@ test('OpenAICompatProvider (Responses API) streams text and collects function ca
     globalThis.fetch = origFetch;
   }
 });
+
+
+test('image attachments are converted for Anthropic and OpenAI-compatible providers', async () => {
+  const msgs: ChatMessage[] = [{ role: 'user', content: 'rate this', images: [{ mediaType: 'image/png', data: 'AAAA' }] }];
+  const a = toAnthropicMessages(msgs, 'claude-opus-5-5');
+  assert.deepEqual(a[0].content, [
+    { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'AAAA' } },
+    { type: 'text', text: 'rate this' },
+  ]);
+  const origFetch = globalThis.fetch;
+  const bodies: string[] = [];
+  globalThis.fetch = (async (_url: string, init: RequestInit) => {
+    bodies.push(String(init.body));
+    return new Response(new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"ok"},"finish_reason":"stop"}]}\n')); c.close(); } }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const chat = new OpenAICompatProvider({ id: 'openai', baseUrl: 'https://x/v1', apiKey: 'k', model: 'm' });
+    await chat.run({ system: 's', messages: msgs, tools: [], onText: () => undefined, signal: new AbortController().signal });
+    const b1 = JSON.parse(bodies[0]);
+    assert.equal(b1.messages[1].content[0].type, 'image_url');
+    assert.equal(b1.messages[1].content[0].image_url.url, 'data:image/png;base64,AAAA');
+    const resp = new OpenAICompatProvider({ id: 'custom', baseUrl: 'https://x/v1', apiKey: 'k', model: 'm', protocol: 'responses' });
+    await resp.run({ system: 's', messages: msgs, tools: [], onText: () => undefined, signal: new AbortController().signal });
+    const b2 = JSON.parse(bodies[1]);
+    assert.equal(b2.input[0].content[0].type, 'input_image');
+    assert.equal(b2.input[0].content[1].text, 'rate this');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});

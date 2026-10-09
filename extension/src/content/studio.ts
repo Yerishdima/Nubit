@@ -2,7 +2,8 @@
 // scoring, keyword demand check, tag suggestions and AI generation with one-click insertion.
 import type { Lang, PageContext, PanelEvent, PanelRequest, QuickActionId, RuntimeMessage, Settings, StudioDraft } from '../shared/types.ts';
 import type { KeywordReport } from '../background/keyword.ts';
-import { loadSettings, onSettingsChanged, providerReady } from '../shared/settings.ts';
+import { loadSettings, onSettingsChanged, providerReady, saveSettings } from '../shared/settings.ts';
+import type { ImageAttachment } from '../shared/types.ts';
 import { formatCompact, setLang } from '../shared/i18n.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 import { guessFocusKeyword, seoScore, titleScore } from '../shared/metrics.ts';
@@ -59,6 +60,20 @@ const L = {
     tagsCount: 'тегов',
     noTitle: 'Начните вводить название — оценка появится здесь.',
     openSettings: 'Открыть настройки',
+    gen_magic: '🪄 Заполнить всё',
+    gen_thumb: '🖼 Оценить превью',
+    templates: 'Шаблоны тегов',
+    tpl_apply: 'Применить',
+    tpl_save: 'Сохранить текущие теги как шаблон',
+    tpl_name: 'Название шаблона:',
+    tpl_del: 'Удалить шаблон',
+    noThumb: 'Превью не найдено: загрузите картинку в поле «Значок» и повторите.',
+    thumbLoading: 'читаю превью…',
+    magicDone: 'Заполнено: название, описание и теги. Проверьте и отредактируйте.',
+    thumbText: 'Текст на превью',
+    strengths: 'Сильные стороны',
+    issues: 'Проблемы',
+    textIdeas: 'Идеи текста',
   },
   en: {
     title: 'Nubit · optimization',
@@ -101,6 +116,20 @@ const L = {
     tagsCount: 'tags',
     noTitle: 'Start typing a title — the score will appear here.',
     openSettings: 'Open settings',
+    gen_magic: '🪄 Magic fill',
+    gen_thumb: '🖼 Review thumbnail',
+    templates: 'Tag templates',
+    tpl_apply: 'Apply',
+    tpl_save: 'Save current tags as a template',
+    tpl_name: 'Template name:',
+    tpl_del: 'Delete template',
+    noThumb: 'No thumbnail found: upload one in the Thumbnail field and retry.',
+    thumbLoading: 'reading the thumbnail…',
+    magicDone: 'Filled in: title, description and tags. Review and edit.',
+    thumbText: 'Text on thumbnail',
+    strengths: 'Strengths',
+    issues: 'Issues',
+    textIdeas: 'Text ideas',
   },
 } as const;
 
@@ -340,21 +369,30 @@ function render(): void {
   </div>`);
 
   // Description + tags summary
+  const tpls = settings.tagTemplates ?? [];
   body.push(`<div class="sec"><h4>${t('descSec')} <span class="muted">${d.description.length} ${t('chars')}</span> · ${t('tagsSec')} <span class="muted">${d.tags.length}</span><span class="pill ${pillClass(seo.score)}">SEO ${seo.score}</span></h4>
     <div class="row"><div class="bar"><i style="width:${seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t('show')}</button></div>
     ${state.showSeoChecks ? checksHtml(seo.checks) : ''}
+    <div class="row" style="margin-top:6px">
+      <select class="kw" id="tpl" title="${t('templates')}"><option value="">${t('templates')}…</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join('')}</select>
+      <button class="btn small" data-act="tpl-apply">${t('tpl_apply')}</button>
+      <button class="btn small" data-act="tpl-del" title="${t('tpl_del')}">✕</button>
+    </div>
+    ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t('tpl_save')}</button></div>` : ''}
   </div>`);
 
   // AI
   const acts: Array<[QuickActionId, Keys]> = [
+    ['studio_magic_fill', 'gen_magic'],
     ['studio_titles', 'gen_titles'],
     ['studio_description', 'gen_description'],
     ['studio_tags', 'gen_tags'],
     ['studio_compare', 'gen_compare'],
+    ['studio_thumbnail', 'gen_thumb'],
   ];
   body.push(`<div class="sec"><h4>${t('ai')}</h4>
     ${ready ? '' : `<div class="muted">${t('noKey')} <button class="btn small" data-act="settings">${t('openSettings')}</button></div>`}
-    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === 'studio_compare' ? '' : 'primary'}" data-act="ai" data-val="${a}" ${!ready || state.running ? 'disabled' : ''}>${t(k)}</button>`).join('')}
+    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === 'studio_compare' || a === 'studio_thumbnail' ? '' : 'primary'}" data-act="ai" data-val="${a}" ${!ready || state.running ? 'disabled' : ''}>${t(k)}</button>`).join('')}
       ${state.running ? `<button class="btn" data-act="stop">${t('stop')}</button>` : ''}</div>
     ${acts.map(([a]) => resultHtml(a, state.ai[a], existing)).join('')}
   </div>`);
@@ -404,6 +442,18 @@ function resultHtml(action: QuickActionId, r: AiResult | undefined, existing: Se
     const tags = p.tags.map((x: Any) => String(x)).filter(Boolean);
     return `<div class="result"><div class="row"><span class="muted">${tags.length} ${t('tagsCount')} · ${tags.join(', ').length} ${t('chars')}</span><span style="flex:1"></span><button class="btn small primary" data-act="addtags" data-val="${escapeHtml(JSON.stringify(tags))}">${t('addAll')}</button></div>
       <div class="chips">${tags.map((x: string) => chip(x, 'addtag', '', existing.has(x.toLowerCase()))).join('')}</div></div>`;
+  }
+  if (action === 'studio_magic_fill' && (p.title || p.description || p.tags)) {
+    return `<div class="result"><div class="muted">${t('magicDone')}</div>${p.title ? `<div class="item"><div class="t">${escapeHtml(String(p.title))}</div><button class="btn small" data-act="insert" data-field="title" data-val="${escapeHtml(String(p.title))}">${t('insert')}</button></div>` : ''}</div>`;
+  }
+  if (action === 'studio_thumbnail' && (typeof p.score === 'number' || p.verdict)) {
+    const score = Number(p.score ?? 0);
+    const list = (title: string, arr: Any) => (Array.isArray(arr) && arr.length ? `<div class="muted" style="margin-top:6px">${title}:</div><ol class="fixes">${arr.map((x: Any) => `<li>${escapeHtml(String(x))}</li>`).join('')}</ol>` : '');
+    return `<div class="result"><div class="row"><span class="pill ${pillClass(score)}">${t('gen_thumb').replace(/^\S+\s/, '')} ${score}</span></div>
+      <div style="margin-top:6px">${escapeHtml(String(p.verdict ?? ''))}</div>
+      ${p.text_on_thumbnail ? `<div class="muted" style="margin-top:4px">${t('thumbText')}: «${escapeHtml(String(p.text_on_thumbnail))}»</div>` : ''}
+      ${list(t('strengths'), p.strengths)}${list(t('issues'), p.issues)}${list(t('fixes'), p.suggestions)}${list(t('textIdeas'), p.text_ideas)}
+    </div>`;
   }
   if (action === 'studio_compare' && (typeof p.score === 'number' || p.verdict)) {
     const score = Number(p.score ?? 0);
@@ -494,12 +544,75 @@ function ensurePort(): chrome.runtime.Port {
   return port;
 }
 
-function runAi(action: QuickActionId): void {
+function runAi(action: QuickActionId, images?: ImageAttachment[]): void {
   if (state.running) return;
   state.ai[action] = { status: 'running', text: '' };
   state.running = action;
   render();
-  ensurePort().postMessage({ type: 'send', tabId: null, text: '', action, history: [], includeContext: true } satisfies PanelRequest);
+  ensurePort().postMessage({ type: 'send', tabId: null, text: '', action, history: [], includeContext: true, images } satisfies PanelRequest);
+}
+
+const THUMB_SEL = [
+  'ytcp-thumbnail-uploader img',
+  'ytcp-thumbnails-compact-editor-uploader img',
+  'ytcp-video-thumbnail-with-info img',
+  '#thumbnail-editor img',
+  'ytcp-thumbnail-editor img',
+  '#still-picture img',
+  'ytcp-uploads-dialog img[src*="ytimg"]',
+  'img[src^="blob:"]',
+];
+
+/** Reads the current thumbnail from the Studio form as a base64 image. */
+async function captureThumbnail(): Promise<ImageAttachment | null> {
+  const imgs = THUMB_SEL.flatMap((s) => Array.from(document.querySelectorAll<HTMLImageElement>(s))).filter((i) => i.src && !/data:image\/svg/.test(i.src));
+  if (!imgs.length) return null;
+  imgs.sort((a, b) => b.naturalWidth * b.naturalHeight - a.naturalWidth * a.naturalHeight);
+  const src = imgs[0].src;
+  const toB64 = async (blob: Blob): Promise<ImageAttachment> => {
+    const buf = new Uint8Array(await blob.arrayBuffer());
+    let bin = '';
+    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    const mediaType = (/^image\/(jpeg|png|webp|gif)$/.test(blob.type) ? blob.type : 'image/jpeg') as ImageAttachment['mediaType'];
+    return { mediaType, data: btoa(bin) };
+  };
+  try {
+    const res = await fetch(src);
+    if (res.ok) return await toB64(await res.blob());
+  } catch {
+    /* cross-origin: go through the background */
+  }
+  if (/^https?:/.test(src)) {
+    const r = (await chrome.runtime.sendMessage({ type: 'fetchImage', url: src } satisfies RuntimeMessage).catch(() => null)) as { mediaType: string; data: string } | { error: string } | null;
+    if (r && 'data' in r) return { mediaType: r.mediaType as ImageAttachment['mediaType'], data: r.data };
+  }
+  // Last resort: draw the element onto a canvas (works for same-origin / CORS-enabled images).
+  try {
+    const c = document.createElement('canvas');
+    c.width = imgs[0].naturalWidth || imgs[0].width;
+    c.height = imgs[0].naturalHeight || imgs[0].height;
+    c.getContext('2d')!.drawImage(imgs[0], 0, 0);
+    const dataUrl = c.toDataURL('image/jpeg', 0.9);
+    return { mediaType: 'image/jpeg', data: dataUrl.split(',')[1] };
+  } catch {
+    return null;
+  }
+}
+
+async function runThumbnailReview(): Promise<void> {
+  if (state.running) return;
+  state.ai.studio_thumbnail = { status: 'running', text: '', progress: t('thumbLoading') };
+  state.running = 'studio_thumbnail';
+  render();
+  const img = await captureThumbnail();
+  if (!img) {
+    state.ai.studio_thumbnail = { status: 'error', text: '', error: t('noThumb') };
+    state.running = undefined;
+    render();
+    return;
+  }
+  state.running = undefined;
+  runAi('studio_thumbnail', [img]);
 }
 
 function onPanelEvent(ev: PanelEvent): void {
@@ -535,8 +648,16 @@ function onPanelEvent(ev: PanelEvent): void {
       }
       state.running = undefined;
       render();
+      if (action === 'studio_magic_fill' && r.status === 'done' && r.parsed) void applyMagicFill(r.parsed);
       break;
   }
+}
+
+async function applyMagicFill(p: Any): Promise<void> {
+  if (typeof p.title === 'string' && p.title.trim()) await insert('title', p.title.trim());
+  if (typeof p.description === 'string' && p.description.trim()) await insert('description', p.description.trim());
+  if (Array.isArray(p.tags) && p.tags.length) await insert('tags', p.tags.map((x: Any) => String(x)));
+  refreshDraft();
 }
 
 function parseJson(text: string): Any | undefined {
@@ -601,8 +722,37 @@ async function onClick(e: Event): Promise<void> {
       render();
       break;
     case 'ai':
-      runAi(val as QuickActionId);
+      if (val === 'studio_thumbnail') void runThumbnailReview();
+      else runAi(val as QuickActionId);
       break;
+    case 'tpl-apply': {
+      const idx = Number(root?.querySelector<HTMLSelectElement>('#tpl')?.value ?? '');
+      const tpl = settings.tagTemplates?.[idx];
+      if (tpl) {
+        await insert('tags', tpl.tags);
+        refreshDraft();
+      }
+      break;
+    }
+    case 'tpl-save': {
+      const name = window.prompt(t('tpl_name'), state.focusKeyword || '')?.trim();
+      if (!name) break;
+      const list = (settings.tagTemplates ?? []).filter((x) => x.name !== name);
+      list.push({ name, tags: [...state.draft.tags] });
+      settings = { ...settings, tagTemplates: list };
+      await saveSettings(settings);
+      render();
+      break;
+    }
+    case 'tpl-del': {
+      const idx = Number(root?.querySelector<HTMLSelectElement>('#tpl')?.value ?? '');
+      if (!Number.isFinite(idx) || !settings.tagTemplates?.[idx]) break;
+      const list = settings.tagTemplates.filter((_x, i) => i !== idx);
+      settings = { ...settings, tagTemplates: list };
+      await saveSettings(settings);
+      render();
+      break;
+    }
     case 'stop':
       port?.postMessage({ type: 'abort' } satisfies PanelRequest);
       break;
