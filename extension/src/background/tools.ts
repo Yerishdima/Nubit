@@ -1,7 +1,8 @@
 // Tools the model can call. Each tool validates its input against its JSON schema before running.
 import type { CommentItem, JsonSchema, Lang, PageContext, Settings, ToolDef } from '../shared/types.ts';
-import { analyzeKeyword, computeMetrics, extractVideoId } from '../shared/metrics.ts';
+import { computeMetrics, extractVideoId } from '../shared/metrics.ts';
 import { roundNumbers } from './prompts.ts';
+import { keywordReport } from './keyword.ts';
 import { YouTube, YouTubeError } from './youtube.ts';
 import { nativeExec, NativeHostError } from './native.ts';
 
@@ -327,16 +328,12 @@ export function buildTools(settings: Settings): Tool[] {
     summary: (i, l) => T(`Анализ запроса «${i.query}»`, `Keyword analysis "${i.query}"`)(l),
     run: async (input, ctx) => {
       try {
-        const [results, suggestions] = await Promise.all([
-          ctx.youtube.search(input.query, 20, 'relevance'),
-          ctx.youtube.suggestions(input.query, input.language ?? ctx.lang).catch(() => [] as string[]),
-        ]);
-        const a = analyzeKeyword(input.query, results);
+        const r = await keywordReport(ctx.youtube, input.query, input.language ?? ctx.lang);
         return json({
-          ...a,
-          smallChannelWinners: a.smallChannelWinners.map(listRow),
-          suggestions,
-          top_results: results.slice(0, 12).map(listRow),
+          ...r,
+          smallChannelWinners: r.smallChannelWinners.map(listRow),
+          topResults: undefined,
+          top_results: r.topResults.map(listRow),
           note: 'demand/competition are heuristic estimates (YouTube publishes no search volume).',
         });
       } catch (err) {

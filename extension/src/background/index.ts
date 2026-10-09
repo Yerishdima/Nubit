@@ -7,6 +7,7 @@ import { nativePing, nativeWhich } from './native.ts';
 import { runAgent } from './agent.ts';
 import { ProviderError, createProvider } from './providers/index.ts';
 import { actionPrompt, renderPageContext } from './prompts.ts';
+import { keywordReport, videoTags } from './keyword.ts';
 
 const youtube = new YouTube(loadSettings);
 
@@ -30,7 +31,7 @@ async function getPageContext(tabId: number | null): Promise<PageContext | null>
 async function activeYouTubeTabId(): Promise<number | null> {
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   const tab = tabs[0];
-  if (tab?.id !== undefined && tab.url && /^https:\/\/www\.youtube\.com\//.test(tab.url)) return tab.id;
+  if (tab?.id !== undefined && tab.url && /^https:\/\/(www|studio)\.youtube\.com\//.test(tab.url)) return tab.id;
   return null;
 }
 
@@ -48,6 +49,8 @@ function contextSummary(ctx: PageContext | null, s: Settings): string | null {
       return ru ? 'Главная YouTube' : 'YouTube home';
     case 'shorts':
       return ru ? 'Shorts' : 'Shorts';
+    case 'studio':
+      return ctx.draft?.title ? `${ru ? 'Черновик' : 'Draft'}: ${ctx.draft.title}` : ru ? 'YouTube Studio' : 'YouTube Studio';
     default:
       return ctx.title || null;
   }
@@ -84,6 +87,14 @@ chrome.runtime.onMessage.addListener((msg: RuntimeMessage, sender, sendResponse)
       return reply(testProvider());
     case 'fetchModels':
       return reply(fetchModels(msg.baseUrl, msg.apiKey));
+    case 'analyzeKeyword':
+      return reply(keywordReport(youtube, msg.query, msg.lang, 20));
+    case 'getVideoTags':
+      return reply(videoTags(youtube, msg.videoIds));
+    case 'studioInsert': {
+      // Relay from the side panel to the Studio tab's content script.
+      return reply(activeYouTubeTabId().then((id) => (id === null ? { error: 'No YouTube Studio tab is active' } : chrome.tabs.sendMessage(id, msg))));
+    }
     case 'pageContextSummary':
       return reply(Promise.all([getPageContext(msg.tabId), loadSettings()]).then(([ctx, s]) => ({ summary: contextSummary(ctx, s), kind: ctx?.kind ?? 'other' })));
   }
@@ -158,7 +169,8 @@ const panelPorts = new Map<number, chrome.runtime.Port>();
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'chat') return;
   let controller: AbortController | null = null;
-  let tabId: number | null = null;
+  // Content-script ports (the Studio panel) carry their tab; the side panel announces its tab in `hello`.
+  let tabId: number | null = port.sender?.tab?.id ?? null;
   const send = (ev: PanelEvent) => {
     try {
       port.postMessage(ev);
@@ -169,7 +181,7 @@ chrome.runtime.onConnect.addListener((port) => {
 
   port.onMessage.addListener(async (msg: PanelRequest) => {
     if (msg.type === 'hello') {
-      tabId = msg.tabId;
+      tabId = msg.tabId ?? tabId;
       if (tabId !== null) panelPorts.set(tabId, port);
       const [ctx, s] = await Promise.all([getPageContext(tabId), loadSettings()]);
       send({ type: 'context', summary: contextSummary(ctx, s), kind: ctx?.kind ?? 'other' });
@@ -242,6 +254,10 @@ function actionLabel(action: QuickActionId, s: Settings): string {
     competitors: ['Конкуренты', 'Competitors'],
     content_ideas: ['Идеи для видео', 'Content ideas'],
     summarize: ['Кратко о чём видео', 'Summarize video'],
+    studio_titles: ['Названия для черновика', 'Titles for the draft'],
+    studio_description: ['Описание для черновика', 'Description for the draft'],
+    studio_tags: ['Теги для черновика', 'Tags for the draft'],
+    studio_compare: ['Сравнение названия с конкурентами', 'Title vs competitors'],
   };
   return labels[action][ru ? 0 : 1];
 }

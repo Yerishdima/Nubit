@@ -63,6 +63,23 @@ const searchHtml = `<!doctype html><html><head><title>cats - YouTube Search</tit
 </ytd-video-renderer>
 </div></ytd-search></body></html>`;
 
+
+const studioHtml = `<!doctype html><html><head><title>Video details - YouTube Studio</title></head><body style="background:#fff">
+<ytcp-video-metadata-editor>
+  <div id="title-textarea"><div id="textbox" contenteditable="true" style="border:1px solid #ccc;padding:8px;min-height:24px"></div></div>
+  <div id="description-textarea"><div id="textbox" contenteditable="true" style="border:1px solid #ccc;padding:8px;min-height:60px"></div></div>
+  <div id="tags-container"><div id="chips"></div><input id="text-input" placeholder="Add tag"></div>
+</ytcp-video-metadata-editor>
+<script>
+  // Minimal imitation of Studio's chip bar: Enter or a trailing comma turns the input into a chip.
+  const input = document.getElementById('text-input');
+  const chips = document.getElementById('chips');
+  const add = (v) => { v = v.trim(); if (!v) return; const c = document.createElement('ytcp-chip'); c.innerHTML = '<span id="chip-text"></span>'; c.querySelector('#chip-text').textContent = v; chips.appendChild(c); input.value = ''; };
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(input.value); });
+  input.addEventListener('input', () => { if (input.value.endsWith(',')) add(input.value.slice(0, -1)); });
+</script>
+</body></html>`;
+
 const context = await chromium.launchPersistentContext('', {
   headless: false,
   executablePath: process.env.CHROMIUM_PATH ?? '/opt/pw-browsers/chromium',
@@ -87,6 +104,11 @@ try {
   });
 
   // Fake YouTube network
+  await context.route('https://studio.youtube.com/**', (route) => {
+    const u = new URL(route.request().url());
+    if (u.pathname.startsWith('/video/')) return route.fulfill({ contentType: 'text/html', body: studioHtml });
+    return route.fulfill({ status: 204, body: '' });
+  });
   await context.route('https://www.youtube.com/**', (route) => {
     const u = new URL(route.request().url());
     if (u.pathname === '/watch') return route.fulfill({ contentType: 'text/html', body: watchHtml });
@@ -186,6 +208,37 @@ try {
   check(sctx?.results?.[0]?.views === 2_300_000 && sctx.results[0].channelHandle === '@cats', 'search result parsed from DOM');
   await yt.screenshot({ path: path.join(out, 'search.png') });
   check(ytErrors.length === 0, `youtube page has no extension errors (${ytErrors.join('; ')})`);
+
+  // 4b. Fake YouTube Studio editor → assistant panel, live scores, insertion
+  const st = await context.newPage();
+  const stErrors = [];
+  st.on('pageerror', (e) => stErrors.push(String(e)));
+  await st.goto('https://studio.youtube.com/video/abcdefghijk/edit');
+  await st.waitForSelector('#nubit-studio-host', { timeout: 15000 });
+  await st.click('#title-textarea #textbox');
+  await st.keyboard.type('Как вырастить канал на YouTube в 2026: 7 шагов для новичков');
+  await st.waitForFunction(() => /SEO \d+/.test(document.getElementById('nubit-studio-host')?.shadowRoot?.textContent ?? ''), null, { timeout: 10000 });
+  const stText = () => st.evaluate(() => document.getElementById('nubit-studio-host')?.shadowRoot?.textContent ?? '');
+  let txt = await stText();
+  check(/Название \d+|Title \d+/.test(txt), 'studio panel shows a live title score');
+  check(/вырастить канал youtube/.test(txt) || (await st.evaluate(() => document.getElementById('nubit-studio-host').shadowRoot.querySelector('#kw').value)) === 'вырастить канал youtube', 'studio panel guesses the focus keyword from the title');
+  // insertion through the background relay (what the AI / side panel use)
+  const ins = await sw.evaluate(async () => {
+    const tabs = await chrome.tabs.query({ url: 'https://studio.youtube.com/*' });
+    const a = await chrome.tabs.sendMessage(tabs[0].id, { type: 'studioInsert', field: 'description', value: 'Первая строка с ключом.\nВторая строка.\n\n0:00 Интро\n1:00 Часть\n2:00 Финал\n#youtube' });
+    const b = await chrome.tabs.sendMessage(tabs[0].id, { type: 'studioInsert', field: 'tags', value: ['youtube', 'рост канала', 'youtube'] });
+    const ctx = await chrome.tabs.sendMessage(tabs[0].id, { type: 'getPageContext' });
+    return { a, b, ctx };
+  });
+  const descText = await st.evaluate(() => document.querySelector('#description-textarea #textbox').innerText);
+  check(ins.a?.ok === true && /Первая строка/.test(descText) && /#youtube/.test(descText), 'description inserted into the Studio field');
+  const chipTexts = await st.$$eval('#chips ytcp-chip', (els) => els.map((e) => e.textContent.trim()));
+  check(ins.b?.ok === true && chipTexts.length === 2 && chipTexts.includes('рост канала'), `tags inserted as chips (${chipTexts.join(', ')})`);
+  check(ins.ctx?.kind === 'studio' && ins.ctx.draft?.tags?.length === 2 && ins.ctx.draft.title.startsWith('Как вырастить') && typeof ins.ctx.draft.seoScore === 'number', 'studio page context carries the draft');
+  txt = await stText();
+  check(/SEO \d+/.test(txt), 'studio panel updates after insertion');
+  await st.screenshot({ path: path.join(out, 'studio.png'), fullPage: true });
+  check(stErrors.length === 0, `studio page has no JS errors (${stErrors.join('; ')})`);
 
   // 5. Provider wiring inside the service worker (network is unavailable here, so we expect a
   //    clean connection error from the Anthropic SDK rather than a crash).

@@ -77,6 +77,23 @@ const ACTION_PROMPTS: Record<QuickActionId, Record<Lang, string>> = {
     ru: 'Получи субтитры этого видео (get_transcript) и кратко перескажи: о чём видео, ключевые тезисы по таймкодам, главный вывод. Если субтитров нет — скажи, как их включить.',
     en: 'Get this video\'s transcript (get_transcript) and summarize it: what it is about, key points with timestamps, main takeaway. If there is no transcript, explain how to enable one.',
   },
+  // Studio actions must answer with JSON only: the Studio panel parses the reply and offers one-click insertion.
+  studio_titles: {
+    ru: 'Творец заполняет форму загрузки в YouTube Studio (черновик в page_context: название, описание, теги, фокус-запрос). Если фокус-запрос есть, проверь спрос инструментом analyze_keyword (один вызов). Предложи 8 названий ≤ 70 символов на языке черновика под разные углы (польза, цифры, вопрос, контраст, ошибка/секрет, «как»), с ключевым запросом ближе к началу. Ответь ТОЛЬКО JSON без пояснений: {"titles":[{"title":"...","angle":"кратко почему сработает"}]}',
+    en: 'The creator is filling the upload form in YouTube Studio (draft in page_context: title, description, tags, focus keyword). If a focus keyword is set, check demand with analyze_keyword (one call). Propose 8 titles ≤ 70 characters in the draft\'s language with different angles (benefit, numbers, question, contrast, mistake/secret, "how to"), keyword near the start. Answer with JSON ONLY, no prose: {"titles":[{"title":"...","angle":"why it works, briefly"}]}',
+  },
+  studio_description: {
+    ru: 'Творец заполняет форму загрузки в YouTube Studio (черновик в page_context). Напиши описание на языке черновика: первые 2 строки — главный запрос и крючок (они видны в поиске), затем 2–4 коротких абзаца о содержании, при необходимости заготовка для глав (0:00 …), 3 хэштега в конце. 600–1500 символов. Сохрани ссылки и таймкоды из текущего описания, если они есть. Ответь ТОЛЬКО JSON: {"description":"..."}',
+    en: 'The creator is filling the upload form in YouTube Studio (draft in page_context). Write a description in the draft\'s language: first 2 lines carry the main keyword and the hook (visible in search), then 2–4 short paragraphs, a chapters placeholder (0:00 …) if useful, 3 hashtags at the end. 600–1500 characters. Keep links and timestamps from the current description if present. Answer with JSON ONLY: {"description":"..."}',
+  },
+  studio_compare: {
+    ru: 'Творец заполняет форму загрузки в YouTube Studio (черновик в page_context). Оцени, насколько его название выделится среди конкурентов: вызови search_youtube по фокус-запросу (или по сути названия) с max_results 12 и analyze_keyword. Сравни название черновика с названиями топ-результатов: повторяет ли оно шаблоны, есть ли уникальный угол, видно ли ключевое слово, какова конкуренция. Дай оценку выделяемости 0–100, 3–5 конкретных правок и 3 альтернативных названия, которые сильнее отличаются. Ответь ТОЛЬКО JSON: {"score":0-100,"verdict":"1–2 предложения","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}',
+    en: 'The creator is filling the upload form in YouTube Studio (draft in page_context). Judge how much their title will stand out among competitors: call search_youtube for the focus keyword (or the gist of the title) with max_results 12 and analyze_keyword. Compare the draft title with the top results: does it repeat their patterns, does it have a unique angle, is the keyword visible, how strong is the competition. Give a stand-out score 0–100, 3–5 concrete fixes and 3 alternative titles that differ more. Answer with JSON ONLY: {"score":0-100,"verdict":"1–2 sentences","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}',
+  },
+  studio_tags: {
+    ru: 'Творец заполняет форму загрузки в YouTube Studio (черновик в page_context). Если есть фокус-запрос, вызови suggest_keywords с expand=true и, по возможности, search_youtube по запросу, чтобы увидеть, как конкуренты называют тему. Составь 20 тегов на языке черновика: точный запрос, его варианты написания, широкие темы, 3–5 длинных «хвостов». Сначала самые важные. Суммарно до 450 символов. Ответь ТОЛЬКО JSON: {"tags":["...","..."]}',
+    en: 'The creator is filling the upload form in YouTube Studio (draft in page_context). If a focus keyword exists, call suggest_keywords with expand=true and, if useful, search_youtube to see how competitors name the topic. Produce 20 tags in the draft\'s language: the exact query, spelling variants, broad topics, 3–5 long-tail phrases. Most important first. Under 450 characters total. Answer with JSON ONLY: {"tags":["...","..."]}',
+  },
 };
 
 export function actionPrompt(action: QuickActionId, lang: Lang): string {
@@ -92,6 +109,7 @@ export function renderPageContext(ctx: PageContext | null | undefined): string {
     page_title: ctx.title,
     captured_at: ctx.capturedAt,
   };
+  if (ctx.draft) c.studio_draft = ctx.draft;
   if (ctx.video) {
     const v = { ...ctx.video };
     if (v.description && v.description.length > 2000) v.description = v.description.slice(0, 2000) + ' …[truncated]';

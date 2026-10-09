@@ -32,6 +32,8 @@ const builds = [
   { entryPoints: [path.join(root, 'src/content/index.ts')], outfile: path.join(dist, 'content.js'), format: 'iife' },
   // Content script (MAIN world: reads YouTube's page globals)
   { entryPoints: [path.join(root, 'src/content/main.ts')], outfile: path.join(dist, 'content-main.js'), format: 'iife' },
+  // YouTube Studio assistant
+  { entryPoints: [path.join(root, 'src/content/studio.ts')], outfile: path.join(dist, 'studio.js'), format: 'iife' },
   // Extension pages
   { entryPoints: [path.join(root, 'src/sidepanel/index.ts')], outfile: path.join(dist, 'sidepanel.js'), format: 'iife' },
   { entryPoints: [path.join(root, 'src/options/index.ts')], outfile: path.join(dist, 'options.js'), format: 'iife' },

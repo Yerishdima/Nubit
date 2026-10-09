@@ -175,10 +175,21 @@ export interface CommentItem {
 
 export type PageKind = 'watch' | 'search' | 'home' | 'channel' | 'shorts' | 'studio' | 'other';
 
+/** What the creator is typing in the YouTube Studio upload / edit dialog. */
+export interface StudioDraft {
+  title: string;
+  description: string;
+  tags: string[];
+  focusKeyword?: string;
+  titleScore?: number;
+  seoScore?: number;
+}
+
 export interface PageContext {
   kind: PageKind;
   url: string;
   title: string;
+  draft?: StudioDraft;
   video?: VideoData;
   metrics?: VideoMetrics;
   query?: string;
@@ -251,7 +262,11 @@ export type QuickActionId =
   | 'channel_review'
   | 'competitors'
   | 'content_ideas'
-  | 'summarize';
+  | 'summarize'
+  | 'studio_titles'
+  | 'studio_description'
+  | 'studio_tags'
+  | 'studio_compare';
 
 // ---- Messaging ----------------------------------------------------------
 
@@ -286,4 +301,7 @@ export type RuntimeMessage =
   | { type: 'nativeWhich'; name: string }
   | { type: 'testProvider' }
   | { type: 'fetchModels'; baseUrl: string; apiKey: string }
+  | { type: 'analyzeKeyword'; query: string; lang: Lang }
+  | { type: 'getVideoTags'; videoIds: string[] }
+  | { type: 'studioInsert'; field: 'title' | 'description' | 'tags'; value: string | string[]; mode?: 'replace' | 'append' }
   | { type: 'pageContextSummary'; tabId: number | null };

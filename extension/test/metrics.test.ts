@@ -118,3 +118,16 @@ test('analyzeKeyword produces bounded scores', () => {
   assert.equal(a.exactInTitle, 2);
   assert.equal(a.smallChannelWinners.length, 1);
 });
+
+test('titleScore rewards keyword placement, hooks and numbers', async () => {
+  const { titleScore, guessFocusKeyword } = await import('../src/shared/metrics.ts');
+  const strong = titleScore('Как вырастить канал на YouTube в 2026: 7 шагов для новичков', 'вырастить канал', 'ru');
+  const weak = titleScore('ВИДЕО!!! 😀😀😀', 'вырастить канал', 'ru');
+  assert.ok(strong.score >= 85, `strong ${strong.score}`);
+  assert.ok(weak.score < 30, `weak ${weak.score}`);
+  assert.equal(strong.checks.find((c) => c.id === 'keyword_front')?.ok, true);
+  assert.equal(titleScore('', 'x').score, 0);
+  // without a keyword the keyword checks disappear
+  assert.ok(!titleScore('Some title here for testing today', '').checks.some((c) => c.id.startsWith('keyword')));
+  assert.equal(guessFocusKeyword('Как вырастить канал на YouTube: 7 шагов'), 'вырастить канал youtube');
+});

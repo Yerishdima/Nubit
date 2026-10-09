@@ -191,9 +191,10 @@ export function seoScore(video: VideoData, lang: Lang = 'ru'): SeoScore {
     ['tags_keywords', overlap(tw, tags.join(' ')) >= 0.5, 15],
     ['chapters', video.hasChapters ?? hasChapters(desc), 10],
     ['hashtags', /#\p{L}/u.test(desc), 5],
-    ['duration', (video.durationSec ?? 0) >= 480, 5],
     ['links', /https?:\/\//.test(desc), 8],
   ];
+  // Duration is only known for published videos; skip the check for drafts.
+  if (video.durationSec !== undefined) raw.push(['duration', video.durationSec >= 480, 5]);
   const checks = raw.map(([id, ok, weight]) => ({
     id,
     ok,
@@ -201,8 +202,87 @@ export function seoScore(video: VideoData, lang: Lang = 'ru'): SeoScore {
     label: SEO_LABELS[id][lang][0],
     hint: SEO_LABELS[id][lang][1],
   }));
-  const score = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
-  return { score, checks };
+  const total = checks.reduce((s, c) => s + c.weight, 0);
+  const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
+  return { score: Math.round((got / total) * 100), checks };
+}
+
+// ---- title analyzer (for the Studio assistant) ------------------------------
+
+const TITLE_LABELS: Record<string, { ru: [string, string]; en: [string, string] }> = {
+  length: {
+    ru: ['Длина 30–70 символов', 'В поиске и рекомендациях название обрезается после ~60–70 символов.'],
+    en: ['30–70 characters long', 'Titles get cut after ~60–70 characters in search and recommendations.'],
+  },
+  keyword: {
+    ru: ['Ключевой запрос есть в названии', 'Поставьте главный запрос как можно ближе к началу.'],
+    en: ['Contains the focus keyword', 'Put the main query as close to the start as possible.'],
+  },
+  keyword_front: {
+    ru: ['Ключевой запрос в первых 40 символах', 'Первые слова видны всегда, даже если название обрезано.'],
+    en: ['Keyword within the first 40 characters', 'The first words are always visible, even when the title is cut.'],
+  },
+  number: {
+    ru: ['Есть число или год', 'Конкретика («7 способов», «2026») повышает кликабельность.'],
+    en: ['Has a number or a year', 'Specifics ("7 ways", "2026") raise click-through.'],
+  },
+  hook: {
+    ru: ['Есть крючок (вопрос, «как», «почему», контраст, скобки)', 'Дайте причину кликнуть: обещание результата, интрига, сравнение.'],
+    en: ['Has a hook (question, "how", "why", contrast, brackets)', 'Give a reason to click: a promised result, intrigue, a comparison.'],
+  },
+  words: {
+    ru: ['5–12 слов', 'Слишком короткое название не объясняет тему, слишком длинное теряет фокус.'],
+    en: ['5–12 words', 'Too short under-explains the topic; too long loses focus.'],
+  },
+  style: {
+    ru: ['Без капса, спама из «!» и эмодзи', 'Один восклицательный знак и не более одного эмодзи.'],
+    en: ['No ALL CAPS, exclamation spam or emoji spam', 'At most one exclamation mark and one emoji.'],
+  },
+  unique: {
+    ru: ['Слова не повторяются', 'Повторы занимают место, которое могли бы занять новые слова для поиска.'],
+    en: ['No repeated words', 'Repeats waste space that could carry new search words.'],
+  },
+};
+
+const HOOK_RE =
+  /\?|:|—|–| - |\(|\[|\bhow\b|\bwhy\b|\bwhat\b|\bbest\b|\btop\b|\bvs\.?\b|\bsecret|\bmistake|\bnever\b|\bstop\b|\bbefore\b|\bкак\b|\bпочему\b|\bчто\b|\bлучш|\bтоп\b|\bсекрет|\bошибк|\bникогда\b|\bпротив\b|\bvs\b|\bпрежде\b|\bбез\b|\bза \d/iu;
+
+export function titleScore(title: string, focusKeyword = '', lang: Lang = 'ru'): SeoScore {
+  const t = title.trim();
+  const kw = focusKeyword.trim().toLowerCase();
+  const lower = t.toLowerCase();
+  const ws = t.split(/\s+/).filter(Boolean);
+  const letters = t.replace(/[^\p{L}]/gu, '');
+  const capsRatio = letters.length ? letters.replace(/[^\p{Lu}]/gu, '').length / letters.length : 0;
+  const emojiCount = (t.match(/\p{Extended_Pictographic}/gu) ?? []).length;
+  const exclam = (t.match(/!/g) ?? []).length;
+  const normalized = ws.map((w) => w.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')).filter((w) => w.length > 2);
+  const hasKw = kw ? lower.includes(kw) || overlap(words(kw), lower) >= 0.75 : false;
+  const raw: Array<[string, boolean, number]> = [
+    ['length', t.length >= 30 && t.length <= 70, 20],
+    ['keyword', hasKw, 15],
+    ['keyword_front', hasKw && (lower.indexOf(kw) >= 0 ? lower.indexOf(kw) < 40 : overlap(words(kw), lower.slice(0, 40)) >= 0.75), 10],
+    ['number', /\d/.test(t), 10],
+    ['hook', HOOK_RE.test(t), 15],
+    ['words', ws.length >= 5 && ws.length <= 12, 10],
+    ['style', capsRatio < 0.6 && exclam <= 1 && emojiCount <= 1, 10],
+    ['unique', new Set(normalized).size === normalized.length, 10],
+  ];
+  // Without a focus keyword the keyword checks are not applicable.
+  const applicable = kw ? raw : raw.filter(([id]) => !id.startsWith('keyword'));
+  const checks = applicable.map(([id, ok, weight]) => ({ id, ok, weight, label: TITLE_LABELS[id][lang][0], hint: TITLE_LABELS[id][lang][1] }));
+  const total = checks.reduce((s, c) => s + c.weight, 0);
+  const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
+  return { score: t ? Math.round((got / total) * 100) : 0, checks };
+}
+
+/** A reasonable default focus keyword: the first few meaningful words of the title. */
+export function guessFocusKeyword(title: string): string {
+  const ws = title
+    .replace(/[|:—–\-()[\]"«»]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w && !STOP.has(w.toLowerCase()) && !/^[\d!?.,]+$/.test(w));
+  return ws.slice(0, 3).join(' ').toLowerCase();
 }
 
 export function computeMetrics(video: VideoData, lang: Lang = 'ru', channelViews?: number[], now = Date.now()): VideoMetrics {

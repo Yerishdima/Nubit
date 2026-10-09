@@ -301,7 +301,9 @@
     { id: "competitors", key: "act_competitors", kinds: ["watch"] },
     { id: "keyword_research", key: "act_keyword_research", kinds: ["search"] },
     { id: "channel_review", key: "act_channel_review", kinds: ["channel"] },
-    { id: "content_ideas", key: "act_content_ideas", kinds: ["channel", "search", "home", "watch", "other", "shorts", "studio"] }
+    { id: "content_ideas", key: "act_content_ideas", kinds: ["channel", "search", "home", "watch", "other", "shorts", "studio"] },
+    { id: "titles", key: "act_titles", kinds: ["studio"] },
+    { id: "tags_description", key: "act_tags_description", kinds: ["studio"] }
   ];
   async function currentTabId() {
     const tabs = await chrome.tabs.query({ active: true, currentWindow: true });

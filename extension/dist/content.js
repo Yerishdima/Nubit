@@ -326,9 +326,9 @@
       ["tags_keywords", overlap(tw, tags.join(" ")) >= 0.5, 15],
       ["chapters", video.hasChapters ?? hasChapters(desc), 10],
       ["hashtags", new RegExp("#\\p{L}", "u").test(desc), 5],
-      ["duration", (video.durationSec ?? 0) >= 480, 5],
       ["links", /https?:\/\//.test(desc), 8]
     ];
+    if (video.durationSec !== void 0) raw.push(["duration", video.durationSec >= 480, 5]);
     const checks = raw.map(([id, ok, weight]) => ({
       id,
       ok,
@@ -336,8 +336,9 @@
       label: SEO_LABELS[id][lang2][0],
       hint: SEO_LABELS[id][lang2][1]
     }));
-    const score = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
-    return { score, checks };
+    const total = checks.reduce((s, c) => s + c.weight, 0);
+    const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
+    return { score: Math.round(got / total * 100), checks };
   }
   function computeMetrics(video, lang2 = "ru", channelViews, now = Date.now()) {
     const ageHours = ageHoursFromIso(video.publishedAt, now);

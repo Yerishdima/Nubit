@@ -1352,9 +1352,9 @@ function seoScore(video, lang = "ru") {
     ["tags_keywords", overlap(tw, tags.join(" ")) >= 0.5, 15],
     ["chapters", video.hasChapters ?? hasChapters(desc), 10],
     ["hashtags", new RegExp("#\\p{L}", "u").test(desc), 5],
-    ["duration", (video.durationSec ?? 0) >= 480, 5],
     ["links", /https?:\/\//.test(desc), 8]
   ];
+  if (video.durationSec !== void 0) raw.push(["duration", video.durationSec >= 480, 5]);
   const checks = raw.map(([id, ok, weight]) => ({
     id,
     ok,
@@ -1362,8 +1362,9 @@ function seoScore(video, lang = "ru") {
     label: SEO_LABELS[id][lang][0],
     hint: SEO_LABELS[id][lang][1]
   }));
-  const score = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
-  return { score, checks };
+  const total = checks.reduce((s, c) => s + c.weight, 0);
+  const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
+  return { score: Math.round(got / total * 100), checks };
 }
 function computeMetrics(video, lang = "ru", channelViews, now = Date.now()) {
   const ageHours = ageHoursFromIso(video.publishedAt, now);
@@ -19004,6 +19005,23 @@ var ACTION_PROMPTS = {
   summarize: {
     ru: "\u041F\u043E\u043B\u0443\u0447\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u044B \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E (get_transcript) \u0438 \u043A\u0440\u0430\u0442\u043A\u043E \u043F\u0435\u0440\u0435\u0441\u043A\u0430\u0436\u0438: \u043E \u0447\u0451\u043C \u0432\u0438\u0434\u0435\u043E, \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0435 \u0442\u0435\u0437\u0438\u0441\u044B \u043F\u043E \u0442\u0430\u0439\u043C\u043A\u043E\u0434\u0430\u043C, \u0433\u043B\u0430\u0432\u043D\u044B\u0439 \u0432\u044B\u0432\u043E\u0434. \u0415\u0441\u043B\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043E\u0432 \u043D\u0435\u0442 \u2014 \u0441\u043A\u0430\u0436\u0438, \u043A\u0430\u043A \u0438\u0445 \u0432\u043A\u043B\u044E\u0447\u0438\u0442\u044C.",
     en: "Get this video's transcript (get_transcript) and summarize it: what it is about, key points with timestamps, main takeaway. If there is no transcript, explain how to enable one."
+  },
+  // Studio actions must answer with JSON only: the Studio panel parses the reply and offers one-click insertion.
+  studio_titles: {
+    ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context: \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435, \u0442\u0435\u0433\u0438, \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441). \u0415\u0441\u043B\u0438 \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441 \u0435\u0441\u0442\u044C, \u043F\u0440\u043E\u0432\u0435\u0440\u044C \u0441\u043F\u0440\u043E\u0441 \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u043C analyze_keyword (\u043E\u0434\u0438\u043D \u0432\u044B\u0437\u043E\u0432). \u041F\u0440\u0435\u0434\u043B\u043E\u0436\u0438 8 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0439 \u2264 70 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u043F\u043E\u0434 \u0440\u0430\u0437\u043D\u044B\u0435 \u0443\u0433\u043B\u044B (\u043F\u043E\u043B\u044C\u0437\u0430, \u0446\u0438\u0444\u0440\u044B, \u0432\u043E\u043F\u0440\u043E\u0441, \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442, \u043E\u0448\u0438\u0431\u043A\u0430/\u0441\u0435\u043A\u0440\u0435\u0442, \xAB\u043A\u0430\u043A\xBB), \u0441 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u043C \u0437\u0430\u043F\u0440\u043E\u0441\u043E\u043C \u0431\u043B\u0438\u0436\u0435 \u043A \u043D\u0430\u0447\u0430\u043B\u0443. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON \u0431\u0435\u0437 \u043F\u043E\u044F\u0441\u043D\u0435\u043D\u0438\u0439: {"titles":[{"title":"...","angle":"\u043A\u0440\u0430\u0442\u043A\u043E \u043F\u043E\u0447\u0435\u043C\u0443 \u0441\u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442"}]}',
+    en: `The creator is filling the upload form in YouTube Studio (draft in page_context: title, description, tags, focus keyword). If a focus keyword is set, check demand with analyze_keyword (one call). Propose 8 titles \u2264 70 characters in the draft's language with different angles (benefit, numbers, question, contrast, mistake/secret, "how to"), keyword near the start. Answer with JSON ONLY, no prose: {"titles":[{"title":"...","angle":"why it works, briefly"}]}`
+  },
+  studio_description: {
+    ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context). \u041D\u0430\u043F\u0438\u0448\u0438 \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430: \u043F\u0435\u0440\u0432\u044B\u0435 2 \u0441\u0442\u0440\u043E\u043A\u0438 \u2014 \u0433\u043B\u0430\u0432\u043D\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441 \u0438 \u043A\u0440\u044E\u0447\u043E\u043A (\u043E\u043D\u0438 \u0432\u0438\u0434\u043D\u044B \u0432 \u043F\u043E\u0438\u0441\u043A\u0435), \u0437\u0430\u0442\u0435\u043C 2\u20134 \u043A\u043E\u0440\u043E\u0442\u043A\u0438\u0445 \u0430\u0431\u0437\u0430\u0446\u0430 \u043E \u0441\u043E\u0434\u0435\u0440\u0436\u0430\u043D\u0438\u0438, \u043F\u0440\u0438 \u043D\u0435\u043E\u0431\u0445\u043E\u0434\u0438\u043C\u043E\u0441\u0442\u0438 \u0437\u0430\u0433\u043E\u0442\u043E\u0432\u043A\u0430 \u0434\u043B\u044F \u0433\u043B\u0430\u0432 (0:00 \u2026), 3 \u0445\u044D\u0448\u0442\u0435\u0433\u0430 \u0432 \u043A\u043E\u043D\u0446\u0435. 600\u20131500 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432. \u0421\u043E\u0445\u0440\u0430\u043D\u0438 \u0441\u0441\u044B\u043B\u043A\u0438 \u0438 \u0442\u0430\u0439\u043C\u043A\u043E\u0434\u044B \u0438\u0437 \u0442\u0435\u043A\u0443\u0449\u0435\u0433\u043E \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u044F, \u0435\u0441\u043B\u0438 \u043E\u043D\u0438 \u0435\u0441\u0442\u044C. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"description":"..."}',
+    en: `The creator is filling the upload form in YouTube Studio (draft in page_context). Write a description in the draft's language: first 2 lines carry the main keyword and the hook (visible in search), then 2\u20134 short paragraphs, a chapters placeholder (0:00 \u2026) if useful, 3 hashtags at the end. 600\u20131500 characters. Keep links and timestamps from the current description if present. Answer with JSON ONLY: {"description":"..."}`
+  },
+  studio_compare: {
+    ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context). \u041E\u0446\u0435\u043D\u0438, \u043D\u0430\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u0435\u0433\u043E \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u0441\u044F \u0441\u0440\u0435\u0434\u0438 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u043E\u0432: \u0432\u044B\u0437\u043E\u0432\u0438 search_youtube \u043F\u043E \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441\u0443 (\u0438\u043B\u0438 \u043F\u043E \u0441\u0443\u0442\u0438 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F) \u0441 max_results 12 \u0438 analyze_keyword. \u0421\u0440\u0430\u0432\u043D\u0438 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u0441 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F\u043C\u0438 \u0442\u043E\u043F-\u0440\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442\u043E\u0432: \u043F\u043E\u0432\u0442\u043E\u0440\u044F\u0435\u0442 \u043B\u0438 \u043E\u043D\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u044B, \u0435\u0441\u0442\u044C \u043B\u0438 \u0443\u043D\u0438\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u0443\u0433\u043E\u043B, \u0432\u0438\u0434\u043D\u043E \u043B\u0438 \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u0435 \u0441\u043B\u043E\u0432\u043E, \u043A\u0430\u043A\u043E\u0432\u0430 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0446\u0438\u044F. \u0414\u0430\u0439 \u043E\u0446\u0435\u043D\u043A\u0443 \u0432\u044B\u0434\u0435\u043B\u044F\u0435\u043C\u043E\u0441\u0442\u0438 0\u2013100, 3\u20135 \u043A\u043E\u043D\u043A\u0440\u0435\u0442\u043D\u044B\u0445 \u043F\u0440\u0430\u0432\u043E\u043A \u0438 3 \u0430\u043B\u044C\u0442\u0435\u0440\u043D\u0430\u0442\u0438\u0432\u043D\u044B\u0445 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F, \u043A\u043E\u0442\u043E\u0440\u044B\u0435 \u0441\u0438\u043B\u044C\u043D\u0435\u0435 \u043E\u0442\u043B\u0438\u0447\u0430\u044E\u0442\u0441\u044F. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"score":0-100,"verdict":"1\u20132 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0435\u043D\u0438\u044F","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}',
+    en: 'The creator is filling the upload form in YouTube Studio (draft in page_context). Judge how much their title will stand out among competitors: call search_youtube for the focus keyword (or the gist of the title) with max_results 12 and analyze_keyword. Compare the draft title with the top results: does it repeat their patterns, does it have a unique angle, is the keyword visible, how strong is the competition. Give a stand-out score 0\u2013100, 3\u20135 concrete fixes and 3 alternative titles that differ more. Answer with JSON ONLY: {"score":0-100,"verdict":"1\u20132 sentences","competitors":[{"title":"...","views":0,"vph":0,"channel":"..."}],"fixes":["..."],"alternatives":["..."]}'
+  },
+  studio_tags: {
+    ru: '\u0422\u0432\u043E\u0440\u0435\u0446 \u0437\u0430\u043F\u043E\u043B\u043D\u044F\u0435\u0442 \u0444\u043E\u0440\u043C\u0443 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432 YouTube Studio (\u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A \u0432 page_context). \u0415\u0441\u043B\u0438 \u0435\u0441\u0442\u044C \u0444\u043E\u043A\u0443\u0441-\u0437\u0430\u043F\u0440\u043E\u0441, \u0432\u044B\u0437\u043E\u0432\u0438 suggest_keywords \u0441 expand=true \u0438, \u043F\u043E \u0432\u043E\u0437\u043C\u043E\u0436\u043D\u043E\u0441\u0442\u0438, search_youtube \u043F\u043E \u0437\u0430\u043F\u0440\u043E\u0441\u0443, \u0447\u0442\u043E\u0431\u044B \u0443\u0432\u0438\u0434\u0435\u0442\u044C, \u043A\u0430\u043A \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B \u043D\u0430\u0437\u044B\u0432\u0430\u044E\u0442 \u0442\u0435\u043C\u0443. \u0421\u043E\u0441\u0442\u0430\u0432\u044C 20 \u0442\u0435\u0433\u043E\u0432 \u043D\u0430 \u044F\u0437\u044B\u043A\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430: \u0442\u043E\u0447\u043D\u044B\u0439 \u0437\u0430\u043F\u0440\u043E\u0441, \u0435\u0433\u043E \u0432\u0430\u0440\u0438\u0430\u043D\u0442\u044B \u043D\u0430\u043F\u0438\u0441\u0430\u043D\u0438\u044F, \u0448\u0438\u0440\u043E\u043A\u0438\u0435 \u0442\u0435\u043C\u044B, 3\u20135 \u0434\u043B\u0438\u043D\u043D\u044B\u0445 \xAB\u0445\u0432\u043E\u0441\u0442\u043E\u0432\xBB. \u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0441\u0430\u043C\u044B\u0435 \u0432\u0430\u0436\u043D\u044B\u0435. \u0421\u0443\u043C\u043C\u0430\u0440\u043D\u043E \u0434\u043E 450 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432. \u041E\u0442\u0432\u0435\u0442\u044C \u0422\u041E\u041B\u042C\u041A\u041E JSON: {"tags":["...","..."]}',
+    en: `The creator is filling the upload form in YouTube Studio (draft in page_context). If a focus keyword exists, call suggest_keywords with expand=true and, if useful, search_youtube to see how competitors name the topic. Produce 20 tags in the draft's language: the exact query, spelling variants, broad topics, 3\u20135 long-tail phrases. Most important first. Under 450 characters total. Answer with JSON ONLY: {"tags":["...","..."]}`
   }
 };
 function actionPrompt(action, lang) {
@@ -19017,6 +19035,7 @@ function renderPageContext(ctx) {
     page_title: ctx.title,
     captured_at: ctx.capturedAt
   };
+  if (ctx.draft) c.studio_draft = ctx.draft;
   if (ctx.video) {
     const v = { ...ctx.video };
     if (v.description && v.description.length > 2e3) v.description = v.description.slice(0, 2e3) + " \u2026[truncated]";
@@ -19061,6 +19080,30 @@ function roundNumbers(obj) {
     if (v === void 0) continue;
     out[k] = typeof v === "number" && !Number.isInteger(v) ? Math.round(v * 1e3) / 1e3 : v;
   }
+  return out;
+}
+
+// src/background/keyword.ts
+async function keywordReport(youtube2, query, lang, maxResults = 20) {
+  const [results, suggestions] = await Promise.all([
+    youtube2.search(query, maxResults, "relevance"),
+    youtube2.suggestions(query, lang).catch(() => [])
+  ]);
+  const a = analyzeKeyword(query, results);
+  return { ...a, suggestions, topResults: results.slice(0, 12) };
+}
+async function videoTags(youtube2, ids, limit2 = 6) {
+  const out = {};
+  await Promise.all(
+    ids.slice(0, limit2).map(async (id) => {
+      try {
+        const v = await youtube2.pageVideo(id);
+        out[id] = v.tags ?? [];
+      } catch {
+        out[id] = [];
+      }
+    })
+  );
   return out;
 }
 
@@ -19340,16 +19383,12 @@ ${slice}`;
     summary: (i, l) => T(`\u0410\u043D\u0430\u043B\u0438\u0437 \u0437\u0430\u043F\u0440\u043E\u0441\u0430 \xAB${i.query}\xBB`, `Keyword analysis "${i.query}"`)(l),
     run: async (input, ctx) => {
       try {
-        const [results, suggestions] = await Promise.all([
-          ctx.youtube.search(input.query, 20, "relevance"),
-          ctx.youtube.suggestions(input.query, input.language ?? ctx.lang).catch(() => [])
-        ]);
-        const a = analyzeKeyword(input.query, results);
+        const r = await keywordReport(ctx.youtube, input.query, input.language ?? ctx.lang);
         return json({
-          ...a,
-          smallChannelWinners: a.smallChannelWinners.map(listRow),
-          suggestions,
-          top_results: results.slice(0, 12).map(listRow),
+          ...r,
+          smallChannelWinners: r.smallChannelWinners.map(listRow),
+          topResults: void 0,
+          top_results: r.topResults.map(listRow),
           note: "demand/competition are heuristic estimates (YouTube publishes no search volume)."
         });
       } catch (err) {
@@ -19569,7 +19608,7 @@ async function getPageContext(tabId) {
 async function activeYouTubeTabId() {
   const tabs = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   const tab = tabs[0];
-  if (tab?.id !== void 0 && tab.url && /^https:\/\/www\.youtube\.com\//.test(tab.url)) return tab.id;
+  if (tab?.id !== void 0 && tab.url && /^https:\/\/(www|studio)\.youtube\.com\//.test(tab.url)) return tab.id;
   return null;
 }
 function contextSummary(ctx, s) {
@@ -19586,6 +19625,8 @@ function contextSummary(ctx, s) {
       return ru ? "\u0413\u043B\u0430\u0432\u043D\u0430\u044F YouTube" : "YouTube home";
     case "shorts":
       return ru ? "Shorts" : "Shorts";
+    case "studio":
+      return ctx.draft?.title ? `${ru ? "\u0427\u0435\u0440\u043D\u043E\u0432\u0438\u043A" : "Draft"}: ${ctx.draft.title}` : ru ? "YouTube Studio" : "YouTube Studio";
     default:
       return ctx.title || null;
   }
@@ -19619,6 +19660,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return reply(testProvider());
     case "fetchModels":
       return reply(fetchModels(msg.baseUrl, msg.apiKey));
+    case "analyzeKeyword":
+      return reply(keywordReport(youtube, msg.query, msg.lang, 20));
+    case "getVideoTags":
+      return reply(videoTags(youtube, msg.videoIds));
+    case "studioInsert": {
+      return reply(activeYouTubeTabId().then((id) => id === null ? { error: "No YouTube Studio tab is active" } : chrome.tabs.sendMessage(id, msg)));
+    }
     case "pageContextSummary":
       return reply(Promise.all([getPageContext(msg.tabId), loadSettings()]).then(([ctx, s]) => ({ summary: contextSummary(ctx, s), kind: ctx?.kind ?? "other" })));
   }
@@ -19683,7 +19731,7 @@ var panelPorts = /* @__PURE__ */ new Map();
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== "chat") return;
   let controller = null;
-  let tabId = null;
+  let tabId = port.sender?.tab?.id ?? null;
   const send = (ev) => {
     try {
       port.postMessage(ev);
@@ -19692,7 +19740,7 @@ chrome.runtime.onConnect.addListener((port) => {
   };
   port.onMessage.addListener(async (msg) => {
     if (msg.type === "hello") {
-      tabId = msg.tabId;
+      tabId = msg.tabId ?? tabId;
       if (tabId !== null) panelPorts.set(tabId, port);
       const [ctx, s] = await Promise.all([getPageContext(tabId), loadSettings()]);
       send({ type: "context", summary: contextSummary(ctx, s), kind: ctx?.kind ?? "other" });
@@ -19766,7 +19814,11 @@ function actionLabel(action, s) {
     channel_review: ["\u0420\u0430\u0437\u0431\u043E\u0440 \u043A\u0430\u043D\u0430\u043B\u0430", "Channel review"],
     competitors: ["\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B", "Competitors"],
     content_ideas: ["\u0418\u0434\u0435\u0438 \u0434\u043B\u044F \u0432\u0438\u0434\u0435\u043E", "Content ideas"],
-    summarize: ["\u041A\u0440\u0430\u0442\u043A\u043E \u043E \u0447\u0451\u043C \u0432\u0438\u0434\u0435\u043E", "Summarize video"]
+    summarize: ["\u041A\u0440\u0430\u0442\u043A\u043E \u043E \u0447\u0451\u043C \u0432\u0438\u0434\u0435\u043E", "Summarize video"],
+    studio_titles: ["\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Titles for the draft"],
+    studio_description: ["\u041E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Description for the draft"],
+    studio_tags: ["\u0422\u0435\u0433\u0438 \u0434\u043B\u044F \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430", "Tags for the draft"],
+    studio_compare: ["\u0421\u0440\u0430\u0432\u043D\u0435\u043D\u0438\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F \u0441 \u043A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u0430\u043C\u0438", "Title vs competitors"]
   };
   return labels[action][ru ? 0 : 1];
 }
