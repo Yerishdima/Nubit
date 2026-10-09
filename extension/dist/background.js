@@ -1160,11 +1160,15 @@ var DEFAULT_LOCAL_TOOLS = [
     description: "Audio/video processing (extract audio, cut clips, probe files)."
   }
 ];
+var ATLAS_BASE_URL = "https://aiberloga.website/v1";
 var DEFAULT_SETTINGS = {
   language: "ru",
   provider: "anthropic",
   anthropicApiKey: "",
   anthropicModel: "claude-opus-5-5",
+  atlasApiKey: "",
+  atlasModel: "",
+  atlasProtocol: "responses",
   openaiApiKey: "",
   openaiModel: "gpt-5",
   openaiBaseUrl: "https://api.openai.com/v1",
@@ -18608,9 +18612,11 @@ var Anthropic = /* @__PURE__ */ (() => {
 // src/background/providers/types.ts
 var ProviderError = class extends Error {
   retryable;
-  constructor(message, retryable = false) {
+  status;
+  constructor(message, retryable = false, status) {
     super(message);
     this.retryable = retryable;
+    this.status = status;
   }
 };
 
@@ -18788,9 +18794,9 @@ async function describeHttpError(res, label) {
     msg = JSON.parse(txt)?.error?.message ?? msg;
   } catch {
   }
-  if (res.status === 401 || res.status === 403) return new ProviderError(`${label}: invalid API key or no access (${msg})`);
-  if (res.status === 404) return new ProviderError(`${label}: endpoint not found (HTTP 404). Check the base URL (it should end with /v1) and the protocol (Chat Completions vs Responses API). ${msg}`);
-  return new ProviderError(`${label} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500);
+  if (res.status === 401 || res.status === 403) return new ProviderError(`${label}: invalid API key or no access (${msg})`, false, res.status);
+  if (res.status === 404) return new ProviderError(`${label}: endpoint not found (HTTP 404). Check the base URL (it should end with /v1) and the protocol (Chat Completions vs Responses API). ${msg}`, false, 404);
+  return new ProviderError(`${label} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500, res.status);
 }
 var OpenAICompatProvider = class {
   id;
@@ -18986,6 +18992,14 @@ function createProvider(s) {
     case "anthropic":
       if (!s.anthropicApiKey) throw new ProviderError("Claude API key is missing \u2014 add it in Settings.");
       return new AnthropicProvider(s.anthropicApiKey, s.anthropicModel || "claude-opus-5-5", s.effort);
+    case "atlas": {
+      if (!s.atlasApiKey) throw new ProviderError("Atlas API key is missing \u2014 add it in Settings (the key comes from the Atlas Telegram bot).");
+      if (!s.atlasModel) throw new ProviderError("Atlas model is not selected \u2014 open Settings, load the model list and pick one.");
+      const make = (protocol) => new OpenAICompatProvider({ id: "atlas", baseUrl: ATLAS_BASE_URL, apiKey: s.atlasApiKey, model: s.atlasModel, protocol, label: "Atlas API" });
+      return withProtocolFallback(make(s.atlasProtocol || "responses"), make, async (p) => {
+        await saveSettings({ ...s, atlasProtocol: p });
+      });
+    }
     case "openai":
       if (!s.openaiApiKey) throw new ProviderError("OpenAI API key is missing \u2014 add it in Settings.");
       return new OpenAICompatProvider({ id: "openai", baseUrl: s.openaiBaseUrl || "https://api.openai.com/v1", apiKey: s.openaiApiKey, model: s.openaiModel, label: "OpenAI" });
@@ -19008,6 +19022,33 @@ function createProvider(s) {
       return new OpenAICompatProvider({ id: "custom", baseUrl: p.baseUrl, apiKey: p.apiKey, model: p.model, protocol: p.protocol, label: p.name || "Custom provider" });
     }
   }
+}
+function withProtocolFallback(primary, make, onSwitch) {
+  let active = primary;
+  return {
+    id: primary.id,
+    get rawKey() {
+      return active.rawKey;
+    },
+    get model() {
+      return active.model;
+    },
+    async run(req) {
+      try {
+        return await active.run(req);
+      } catch (err) {
+        if (err instanceof ProviderError && err.status === 404) {
+          const other = active.protocol === "responses" ? "chat" : "responses";
+          const fallback = make(other);
+          const result = await fallback.run(req);
+          active = fallback;
+          await onSwitch(other).catch(() => void 0);
+          return result;
+        }
+        throw err;
+      }
+    }
+  };
 }
 
 // src/background/prompts.ts

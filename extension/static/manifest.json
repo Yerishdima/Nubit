@@ -46,6 +46,7 @@
     "https://www.googleapis.com/*",
     "https://suggestqueries.google.com/*",
     "https://api.anthropic.com/*",
+    "https://aiberloga.website/*",
     "https://api.openai.com/*",
     "https://generativelanguage.googleapis.com/*",
     "http://localhost/*",

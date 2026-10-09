@@ -20,11 +20,17 @@ export const ANTHROPIC_MODELS = [
   { id: 'claude-fable-5-1', label: 'Claude Fable 5.1 (most capable, slow)' },
 ];
 
+/** Atlas API — preconfigured OpenAI-compatible provider (https://t.me/atlas_ap1_bot). */
+export const ATLAS_BASE_URL = 'https://aiberloga.website/v1';
+
 export const DEFAULT_SETTINGS: Settings = {
   language: 'ru',
   provider: 'anthropic',
   anthropicApiKey: '',
   anthropicModel: 'claude-opus-5-5',
+  atlasApiKey: '',
+  atlasModel: '',
+  atlasProtocol: 'responses',
   openaiApiKey: '',
   openaiModel: 'gpt-5',
   openaiBaseUrl: 'https://api.openai.com/v1',
@@ -78,6 +84,8 @@ export function providerReady(s: Settings): boolean {
   switch (s.provider) {
     case 'anthropic':
       return !!s.anthropicApiKey;
+    case 'atlas':
+      return !!s.atlasApiKey && !!s.atlasModel;
     case 'openai':
       return !!s.openaiApiKey;
     case 'gemini':
@@ -95,6 +103,8 @@ export function currentModel(s: Settings): string {
   switch (s.provider) {
     case 'anthropic':
       return s.anthropicModel;
+    case 'atlas':
+      return s.atlasModel;
     case 'openai':
       return s.openaiModel;
     case 'gemini':

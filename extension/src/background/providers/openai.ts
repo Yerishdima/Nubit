@@ -67,9 +67,9 @@ async function describeHttpError(res: Response, label: string): Promise<Provider
   } catch {
     /* keep raw */
   }
-  if (res.status === 401 || res.status === 403) return new ProviderError(`${label}: invalid API key or no access (${msg})`);
-  if (res.status === 404) return new ProviderError(`${label}: endpoint not found (HTTP 404). Check the base URL (it should end with /v1) and the protocol (Chat Completions vs Responses API). ${msg}`);
-  return new ProviderError(`${label} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500);
+  if (res.status === 401 || res.status === 403) return new ProviderError(`${label}: invalid API key or no access (${msg})`, false, res.status);
+  if (res.status === 404) return new ProviderError(`${label}: endpoint not found (HTTP 404). Check the base URL (it should end with /v1) and the protocol (Chat Completions vs Responses API). ${msg}`, false, 404);
+  return new ProviderError(`${label} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500, res.status);
 }
 
 export class OpenAICompatProvider implements Provider {

@@ -28,9 +28,11 @@ export interface Provider {
 
 export class ProviderError extends Error {
   readonly retryable: boolean;
+  readonly status?: number;
 
-  constructor(message: string, retryable = false) {
+  constructor(message: string, retryable = false, status?: number) {
     super(message);
     this.retryable = retryable;
+    this.status = status;
   }
 }

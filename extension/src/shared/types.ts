@@ -1,7 +1,7 @@
 // Shared types used across background, content scripts, side panel and options.
 
 export type Lang = 'ru' | 'en';
-export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'custom';
+export type ProviderId = 'anthropic' | 'atlas' | 'openai' | 'gemini' | 'ollama' | 'custom';
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh';
 /** Wire protocol of an OpenAI-compatible service. */
 export type WireProtocol = 'chat' | 'responses';
@@ -53,6 +53,10 @@ export interface Settings {
   provider: ProviderId;
   anthropicApiKey: string;
   anthropicModel: string;
+  /** Atlas API (OpenAI-compatible proxy, preconfigured). */
+  atlasApiKey: string;
+  atlasModel: string;
+  atlasProtocol: WireProtocol;
   openaiApiKey: string;
   openaiModel: string;
   openaiBaseUrl: string;

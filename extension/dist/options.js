@@ -19,11 +19,15 @@
     { id: "claude-haiku-5-5", label: "Claude Haiku 5.5 (cheapest)" },
     { id: "claude-fable-5-1", label: "Claude Fable 5.1 (most capable, slow)" }
   ];
+  var ATLAS_BASE_URL = "https://aiberloga.website/v1";
   var DEFAULT_SETTINGS = {
     language: "ru",
     provider: "anthropic",
     anthropicApiKey: "",
     anthropicModel: "claude-opus-5-5",
+    atlasApiKey: "",
+    atlasModel: "",
+    atlasProtocol: "responses",
     openaiApiKey: "",
     openaiModel: "gpt-5",
     openaiBaseUrl: "https://api.openai.com/v1",
@@ -63,6 +67,8 @@
     switch (s.provider) {
       case "anthropic":
         return !!s.anthropicApiKey;
+      case "atlas":
+        return !!s.atlasApiKey && !!s.atlasModel;
       case "openai":
         return !!s.openaiApiKey;
       case "gemini":
@@ -102,11 +108,18 @@
     "h-ai": { ru: "\u0418\u0418-\u043C\u043E\u0434\u0435\u043B\u044C", en: "AI model" },
     "step1-title": { ru: "\u0428\u0430\u0433 1 \u0438\u0437 1: \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0418\u0418", en: "Step 1 of 1: connect an AI" },
     "step1-text": {
-      ru: "\u0412\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447 Claude \u0432 \u043F\u043E\u043B\u0435 \u043D\u0438\u0436\u0435 (console.anthropic.com \u2192 API Keys \u2192 Create key), \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\xBB, \u0437\u0430\u0442\u0435\u043C \xAB\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C\xBB. \u0412\u0441\u0451 \u043E\u0441\u0442\u0430\u043B\u044C\u043D\u043E\u0435 \u043D\u0430 \u044D\u0442\u043E\u0439 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u2014 \u043F\u043E \u0436\u0435\u043B\u0430\u043D\u0438\u044E. \u041F\u043E\u0442\u043E\u043C \u043E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u043B\u044E\u0431\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043D\u0430 YouTube.",
-      en: 'Paste your Claude key below (console.anthropic.com \u2192 API Keys \u2192 Create key), press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.'
+      ru: "\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430 \u043D\u0438\u0436\u0435 \u0438 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447: Claude (console.anthropic.com \u2192 API Keys) \u0438\u043B\u0438 Atlas API (\u043A\u043B\u044E\u0447 \u0438\u0437 \u0431\u043E\u0442\u0430 \u0432 Telegram, \u043C\u043E\u0434\u0435\u043B\u044C \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0437 \u0441\u043F\u0438\u0441\u043A\u0430). \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\xBB, \u0437\u0430\u0442\u0435\u043C \xAB\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C\xBB. \u0412\u0441\u0451 \u043E\u0441\u0442\u0430\u043B\u044C\u043D\u043E\u0435 \u043D\u0430 \u044D\u0442\u043E\u0439 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u2014 \u043F\u043E \u0436\u0435\u043B\u0430\u043D\u0438\u044E. \u041F\u043E\u0442\u043E\u043C \u043E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u043B\u044E\u0431\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043D\u0430 YouTube.",
+      en: 'Pick a provider below and paste the key: Claude (console.anthropic.com \u2192 API Keys) or Atlas API (key from the Telegram bot, then pick a model from the list). Press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.'
     },
     "lbl-provider": { ru: "\u041F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440", en: "Provider" },
     "lbl-model-a": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
+    "lbl-model-atlas": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
+    "atlas-load": { ru: "\u041E\u0431\u043D\u043E\u0432\u0438\u0442\u044C \u0441\u043F\u0438\u0441\u043E\u043A", en: "Reload list" },
+    "lbl-atlas-protocol": { ru: "\u041F\u0440\u043E\u0442\u043E\u043A\u043E\u043B (\u0430\u0432\u0442\u043E)", en: "Protocol (auto)" },
+    "hint-atlas": {
+      ru: "\u041A\u043B\u044E\u0447 \u0432\u044B\u0434\u0430\u0451\u0442 \u0431\u043E\u0442 Atlas \u0432 Telegram: API \u2192 \u041F\u0435\u0440\u0435\u0441\u043E\u0437\u0434\u0430\u0442\u044C API key. \u0412\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447 \u2014 \u0441\u043F\u0438\u0441\u043E\u043A \u043C\u043E\u0434\u0435\u043B\u0435\u0439 \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044F \u0441\u0430\u043C. \u0410\u0434\u0440\u0435\u0441 \u0441\u0435\u0440\u0432\u0438\u0441\u0430 \u0443\u0436\u0435 \u043D\u0430\u0441\u0442\u0440\u043E\u0435\u043D; \u0435\u0441\u043B\u0438 \u0441\u0435\u0440\u0432\u0438\u0441 \u043D\u0435 \u043F\u0440\u0438\u043D\u0438\u043C\u0430\u0435\u0442 \u043E\u0434\u0438\u043D \u043F\u0440\u043E\u0442\u043E\u043A\u043E\u043B, \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u0435 \u0441\u0430\u043C\u043E \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0441\u044F \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0439.",
+      en: "The key comes from the Atlas Telegram bot: API \u2192 Recreate API key. Paste it and the model list loads automatically. The service address is preconfigured; if one protocol is rejected, the extension switches to the other by itself."
+    },
     "lbl-model-o": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
     "lbl-model-g": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
     "lbl-model-l": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
@@ -188,6 +201,7 @@
     const current = selected ?? sel.value;
     sel.innerHTML = "";
     sel.add(new Option("Claude (Anthropic)", "anthropic"));
+    sel.add(new Option("Atlas API", "atlas"));
     sel.add(new Option("OpenAI (GPT)", "openai"));
     sel.add(new Option("Google Gemini", "gemini"));
     sel.add(new Option("Ollama (local)", "ollama"));
@@ -310,9 +324,11 @@
     for (const m of ANTHROPIC_MODELS) sel.add(new Option(m.label, m.id));
     if (!known && settings.anthropicModel) sel.add(new Option(settings.anthropicModel, settings.anthropicModel));
     sel.value = settings.anthropicModel;
-    for (const id of ["anthropicApiKey", "openaiApiKey", "openaiModel", "openaiBaseUrl", "geminiApiKey", "geminiModel", "ollamaBaseUrl", "ollamaModel", "youtubeApiKey"]) {
+    for (const id of ["anthropicApiKey", "atlasApiKey", "openaiApiKey", "openaiModel", "openaiBaseUrl", "geminiApiKey", "geminiModel", "ollamaBaseUrl", "ollamaModel", "youtubeApiKey"]) {
       $(id).value = settings[id];
     }
+    $("atlasProtocol").value = settings.atlasProtocol || "responses";
+    fillAtlasModels(atlasModelsCache, settings.atlasModel);
     $("effort").value = settings.effort;
     for (const id of ["showOverlay", "showBadges", "computeOutliers"]) $(id).checked = settings[id];
     localTools = settings.localTools.map((t) => ({ ...t }));
@@ -321,6 +337,40 @@
     applyTexts(settings.language);
     showProvider();
     $("step1").classList.toggle("hidden", providerReady(settings));
+  }
+  var atlasModelsCache = [];
+  function fillAtlasModels(models, selected) {
+    const sel = $("atlasModel");
+    sel.innerHTML = "";
+    const list = [...models];
+    if (selected && !list.includes(selected)) list.unshift(selected);
+    if (!list.length) sel.add(new Option(tr("\u2014 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447, \u0441\u043F\u0438\u0441\u043E\u043A \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0441\u044F \u2014", "\u2014 paste the key to load models \u2014"), ""));
+    for (const m of list) sel.add(new Option(m, m));
+    sel.value = selected && list.includes(selected) ? selected : list[0] ?? "";
+  }
+  async function loadAtlasModels() {
+    const key = val("atlasApiKey");
+    const out = $("atlas-status");
+    if (!key) {
+      out.textContent = tr("\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447 Atlas.", "Paste the Atlas key first.");
+      out.className = "hint";
+      return;
+    }
+    out.textContent = tr("\u0417\u0430\u0433\u0440\u0443\u0436\u0430\u044E \u0441\u043F\u0438\u0441\u043E\u043A \u043C\u043E\u0434\u0435\u043B\u0435\u0439\u2026", "Loading the model list\u2026");
+    out.className = "hint";
+    const res = await chrome.runtime.sendMessage({ type: "fetchModels", baseUrl: ATLAS_BASE_URL, apiKey: key }).catch((err) => ({ error: String(err) }));
+    if ("error" in res) {
+      out.textContent = tr(`\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043C\u043E\u0434\u0435\u043B\u0438: ${res.error}`, `Could not load models: ${res.error}`);
+      out.className = "hint";
+      out.style.color = "var(--bad)";
+      return;
+    }
+    out.style.color = "";
+    atlasModelsCache = res.models;
+    await chrome.storage.local.set({ atlasModels: res.models }).catch(() => void 0);
+    fillAtlasModels(res.models, val("atlasModel") || settings.atlasModel);
+    out.textContent = tr(`\u041C\u043E\u0434\u0435\u043B\u0435\u0439 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E: ${res.models.length}. \u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043E\u0434\u043D\u0443 \u0438 \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C\xBB.`, `${res.models.length} models available. Pick one and press "Save".`);
+    out.className = "hint";
   }
   function renderTools(l) {
     const tbody = $("local-tools").querySelector("tbody");
@@ -414,6 +464,9 @@
       customProviders: customProviders.map((p) => ({ ...p, name: p.name.trim(), baseUrl: p.baseUrl.trim(), apiKey: p.apiKey.trim(), model: p.model.trim() })).filter((p) => p.name || p.baseUrl),
       anthropicApiKey: val("anthropicApiKey"),
       anthropicModel: val("anthropicModel") || DEFAULT_SETTINGS.anthropicModel,
+      atlasApiKey: val("atlasApiKey"),
+      atlasModel: val("atlasModel"),
+      atlasProtocol: $("atlasProtocol").value || "responses",
       openaiApiKey: val("openaiApiKey"),
       openaiModel: val("openaiModel") || DEFAULT_SETTINGS.openaiModel,
       openaiBaseUrl: val("openaiBaseUrl") || DEFAULT_SETTINGS.openaiBaseUrl,
@@ -443,7 +496,19 @@
   }
   async function main() {
     settings = await loadSettings();
+    atlasModelsCache = (await chrome.storage.local.get("atlasModels")).atlasModels ?? [];
     fill();
+    $("atlas-load").addEventListener("click", loadAtlasModels);
+    let atlasTimer;
+    $("atlasApiKey").addEventListener("input", () => {
+      clearTimeout(atlasTimer);
+      atlasTimer = window.setTimeout(() => {
+        if (val("atlasApiKey").length >= 8) loadAtlasModels();
+      }, 800);
+    });
+    $("provider").addEventListener("change", () => {
+      if (providerSelectValue() === "atlas" && val("atlasApiKey") && !atlasModelsCache.length) loadAtlasModels();
+    });
     $("provider").addEventListener("change", onProviderChange);
     $("language").addEventListener("change", () => applyTexts(lang()));
     $("save").addEventListener("click", save);

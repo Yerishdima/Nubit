@@ -128,6 +128,18 @@ try {
   await opt.click('#save');
   await opt.waitForFunction(() => document.getElementById('save-result')?.textContent === 'Saved');
   check(true, 'options page saves settings');
+  // built-in Atlas provider
+  await opt.selectOption('#provider', 'atlas');
+  check(await opt.isVisible('#atlasApiKey'), 'Atlas provider block is shown');
+  await opt.fill('#atlasApiKey', 'atlas-test-key');
+  await opt.waitForFunction(() => /models|моделей|Could not|Не удалось/.test(document.getElementById('atlas-status')?.textContent ?? ''), null, { timeout: 30000 }).catch(() => null);
+  console.log('atlas status:', await opt.textContent('#atlas-status'));
+  await opt.evaluate(() => { const s = document.getElementById('atlasModel'); s.add(new Option('test-model', 'test-model')); s.value = 'test-model'; });
+  await opt.click('#save');
+  await opt.waitForFunction(() => document.getElementById('save-result')?.textContent === 'Saved');
+  const atlasStored = await opt.evaluate(async () => (await chrome.storage.local.get('settings')).settings);
+  check(atlasStored.provider === 'atlas' && atlasStored.atlasApiKey === 'atlas-test-key' && atlasStored.atlasModel === 'test-model' && atlasStored.atlasProtocol === 'responses', 'Atlas provider saved with key, model and protocol');
+
   // custom provider preset (Atlas API)
   await opt.click('#add-atlas');
   await opt.waitForSelector('.cp');

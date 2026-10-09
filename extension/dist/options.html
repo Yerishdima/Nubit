@@ -45,6 +45,18 @@
         </div>
         <p class="hint" id="hint-anthropic"></p>
       </div>
+      <div class="prov" data-prov="atlas">
+        <div class="row"><label for="atlasApiKey">Atlas API key</label><input id="atlasApiKey" type="password" autocomplete="off" /></div>
+        <div class="row"><label for="atlasModel" id="lbl-model-atlas"></label>
+          <div class="models"><select id="atlasModel"></select><button id="atlas-load" class="btn small"></button></div></div>
+        <p class="hint" id="hint-atlas"></p>
+        <p class="hint" id="atlas-status"></p>
+        <div class="row"><label for="atlasProtocol" id="lbl-atlas-protocol"></label>
+          <select id="atlasProtocol">
+            <option value="responses">Responses API</option>
+            <option value="chat">Chat Completions</option>
+          </select></div>
+      </div>
       <div class="prov" data-prov="openai">
         <div class="row"><label for="openaiApiKey">OpenAI API key</label><input id="openaiApiKey" type="password" placeholder="sk-…" autocomplete="off" /></div>
         <div class="row"><label for="openaiModel" id="lbl-model-o"></label><input id="openaiModel" /></div>

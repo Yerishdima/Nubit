@@ -1,6 +1,6 @@
 // Options page: API keys, models, custom providers, display toggles, local tools (native host) and custom APIs.
 import type { CustomApi, CustomProvider, Lang, LocalTool, RuntimeMessage, Settings } from '../shared/types.ts';
-import { ANTHROPIC_MODELS, DEFAULT_SETTINGS, loadSettings, providerReady, saveSettings } from '../shared/settings.ts';
+import { ANTHROPIC_MODELS, ATLAS_BASE_URL, DEFAULT_SETTINGS, loadSettings, providerReady, saveSettings } from '../shared/settings.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -26,11 +26,18 @@ const TEXT: Record<string, Record<Lang, string>> = {
   'h-ai': { ru: 'ИИ-модель', en: 'AI model' },
   'step1-title': { ru: 'Шаг 1 из 1: подключите ИИ', en: 'Step 1 of 1: connect an AI' },
   'step1-text': {
-    ru: 'Вставьте ключ Claude в поле ниже (console.anthropic.com → API Keys → Create key), нажмите «Проверить подключение», затем «Сохранить». Всё остальное на этой странице — по желанию. Потом откройте любое видео на YouTube.',
-    en: 'Paste your Claude key below (console.anthropic.com → API Keys → Create key), press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.',
+    ru: 'Выберите провайдера ниже и вставьте ключ: Claude (console.anthropic.com → API Keys) или Atlas API (ключ из бота в Telegram, модель выберите из списка). Нажмите «Проверить подключение», затем «Сохранить». Всё остальное на этой странице — по желанию. Потом откройте любое видео на YouTube.',
+    en: 'Pick a provider below and paste the key: Claude (console.anthropic.com → API Keys) or Atlas API (key from the Telegram bot, then pick a model from the list). Press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.',
   },
   'lbl-provider': { ru: 'Провайдер', en: 'Provider' },
   'lbl-model-a': { ru: 'Модель', en: 'Model' },
+  'lbl-model-atlas': { ru: 'Модель', en: 'Model' },
+  'atlas-load': { ru: 'Обновить список', en: 'Reload list' },
+  'lbl-atlas-protocol': { ru: 'Протокол (авто)', en: 'Protocol (auto)' },
+  'hint-atlas': {
+    ru: 'Ключ выдаёт бот Atlas в Telegram: API → Пересоздать API key. Вставьте ключ — список моделей загрузится сам. Адрес сервиса уже настроен; если сервис не принимает один протокол, расширение само переключится на другой.',
+    en: 'The key comes from the Atlas Telegram bot: API → Recreate API key. Paste it and the model list loads automatically. The service address is preconfigured; if one protocol is rejected, the extension switches to the other by itself.',
+  },
   'lbl-model-o': { ru: 'Модель', en: 'Model' },
   'lbl-model-g': { ru: 'Модель', en: 'Model' },
   'lbl-model-l': { ru: 'Модель', en: 'Model' },
@@ -121,6 +128,7 @@ function renderProviderOptions(selected?: string): void {
   const current = selected ?? sel.value;
   sel.innerHTML = '';
   sel.add(new Option('Claude (Anthropic)', 'anthropic'));
+  sel.add(new Option('Atlas API', 'atlas'));
   sel.add(new Option('OpenAI (GPT)', 'openai'));
   sel.add(new Option('Google Gemini', 'gemini'));
   sel.add(new Option('Ollama (local)', 'ollama'));
@@ -252,9 +260,11 @@ function fill(): void {
   for (const m of ANTHROPIC_MODELS) sel.add(new Option(m.label, m.id));
   if (!known && settings.anthropicModel) sel.add(new Option(settings.anthropicModel, settings.anthropicModel));
   sel.value = settings.anthropicModel;
-  for (const id of ['anthropicApiKey', 'openaiApiKey', 'openaiModel', 'openaiBaseUrl', 'geminiApiKey', 'geminiModel', 'ollamaBaseUrl', 'ollamaModel', 'youtubeApiKey'] as const) {
+  for (const id of ['anthropicApiKey', 'atlasApiKey', 'openaiApiKey', 'openaiModel', 'openaiBaseUrl', 'geminiApiKey', 'geminiModel', 'ollamaBaseUrl', 'ollamaModel', 'youtubeApiKey'] as const) {
     $<HTMLInputElement>(id).value = settings[id];
   }
+  $<HTMLSelectElement>('atlasProtocol').value = settings.atlasProtocol || 'responses';
+  fillAtlasModels(atlasModelsCache, settings.atlasModel);
   $<HTMLSelectElement>('effort').value = settings.effort;
   for (const id of ['showOverlay', 'showBadges', 'computeOutliers'] as const) $<HTMLInputElement>(id).checked = settings[id];
   localTools = settings.localTools.map((t) => ({ ...t }));
@@ -263,6 +273,47 @@ function fill(): void {
   applyTexts(settings.language);
   showProvider();
   $('step1').classList.toggle('hidden', providerReady(settings));
+}
+
+// ---- Atlas: preconfigured provider, model list loads from the service ----
+
+let atlasModelsCache: string[] = [];
+
+function fillAtlasModels(models: string[], selected: string): void {
+  const sel = $<HTMLSelectElement>('atlasModel');
+  sel.innerHTML = '';
+  const list = [...models];
+  if (selected && !list.includes(selected)) list.unshift(selected);
+  if (!list.length) sel.add(new Option(tr('— вставьте ключ, список загрузится —', '— paste the key to load models —'), ''));
+  for (const m of list) sel.add(new Option(m, m));
+  sel.value = selected && list.includes(selected) ? selected : list[0] ?? '';
+}
+
+async function loadAtlasModels(): Promise<void> {
+  const key = val('atlasApiKey');
+  const out = $('atlas-status');
+  if (!key) {
+    out.textContent = tr('Сначала вставьте ключ Atlas.', 'Paste the Atlas key first.');
+    out.className = 'hint';
+    return;
+  }
+  out.textContent = tr('Загружаю список моделей…', 'Loading the model list…');
+  out.className = 'hint';
+  const res = (await chrome.runtime.sendMessage({ type: 'fetchModels', baseUrl: ATLAS_BASE_URL, apiKey: key } satisfies RuntimeMessage).catch((err) => ({ error: String(err) }))) as
+    | { models: string[] }
+    | { error: string };
+  if ('error' in res) {
+    out.textContent = tr(`Не удалось получить модели: ${res.error}`, `Could not load models: ${res.error}`);
+    out.className = 'hint';
+    out.style.color = 'var(--bad)';
+    return;
+  }
+  out.style.color = '';
+  atlasModelsCache = res.models;
+  await chrome.storage.local.set({ atlasModels: res.models }).catch(() => undefined);
+  fillAtlasModels(res.models, val('atlasModel') || settings.atlasModel);
+  out.textContent = tr(`Моделей доступно: ${res.models.length}. Выберите одну и нажмите «Сохранить».`, `${res.models.length} models available. Pick one and press "Save".`);
+  out.className = 'hint';
 }
 
 function renderTools(l: Lang): void {
@@ -365,6 +416,9 @@ function collect(): Settings {
       .filter((p) => p.name || p.baseUrl),
     anthropicApiKey: val('anthropicApiKey'),
     anthropicModel: val('anthropicModel') || DEFAULT_SETTINGS.anthropicModel,
+    atlasApiKey: val('atlasApiKey'),
+    atlasModel: val('atlasModel'),
+    atlasProtocol: ($<HTMLSelectElement>('atlasProtocol').value as Settings['atlasProtocol']) || 'responses',
     openaiApiKey: val('openaiApiKey'),
     openaiModel: val('openaiModel') || DEFAULT_SETTINGS.openaiModel,
     openaiBaseUrl: val('openaiBaseUrl') || DEFAULT_SETTINGS.openaiBaseUrl,
@@ -398,7 +452,19 @@ async function save(): Promise<void> {
 
 async function main(): Promise<void> {
   settings = await loadSettings();
+  atlasModelsCache = ((await chrome.storage.local.get('atlasModels')).atlasModels as string[] | undefined) ?? [];
   fill();
+  $('atlas-load').addEventListener('click', loadAtlasModels);
+  let atlasTimer: number | undefined;
+  $('atlasApiKey').addEventListener('input', () => {
+    clearTimeout(atlasTimer);
+    atlasTimer = window.setTimeout(() => {
+      if (val('atlasApiKey').length >= 8) loadAtlasModels();
+    }, 800);
+  });
+  $('provider').addEventListener('change', () => {
+    if (providerSelectValue() === 'atlas' && val('atlasApiKey') && !atlasModelsCache.length) loadAtlasModels();
+  });
   $('provider').addEventListener('change', onProviderChange);
   $('language').addEventListener('change', () => applyTexts(lang()));
   $('save').addEventListener('click', save);

@@ -18,6 +18,9 @@
     provider: "anthropic",
     anthropicApiKey: "",
     anthropicModel: "claude-opus-5-5",
+    atlasApiKey: "",
+    atlasModel: "",
+    atlasProtocol: "responses",
     openaiApiKey: "",
     openaiModel: "gpt-5",
     openaiBaseUrl: "https://api.openai.com/v1",
@@ -64,6 +67,8 @@
     switch (s.provider) {
       case "anthropic":
         return !!s.anthropicApiKey;
+      case "atlas":
+        return !!s.atlasApiKey && !!s.atlasModel;
       case "openai":
         return !!s.openaiApiKey;
       case "gemini":

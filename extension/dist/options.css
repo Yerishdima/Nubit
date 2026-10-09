@@ -46,6 +46,8 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
 .result.ok { color: var(--good); }
 .result.bad { color: var(--bad); }
 .prov { display: none; }
+.models { display: flex; gap: 8px; align-items: center; }
+.models select { flex: 1; }
 .prov.active { display: block; }
 table.tools { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
 table.tools th { text-align: left; color: var(--fg2); font-weight: 500; padding: 4px 6px; }

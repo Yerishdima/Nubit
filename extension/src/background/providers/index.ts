@@ -1,5 +1,6 @@
-import type { Settings } from '../../shared/types.ts';
-import { activeCustomProvider } from '../../shared/settings.ts';
+import type { Settings, WireProtocol } from '../../shared/types.ts';
+import { ATLAS_BASE_URL, activeCustomProvider, saveSettings } from '../../shared/settings.ts';
+import type { RunRequest, TurnResult } from './types.ts';
 import { AnthropicProvider } from './anthropic.ts';
 import { OpenAICompatProvider } from './openai.ts';
 import { ProviderError, type Provider } from './types.ts';
@@ -9,6 +10,15 @@ export function createProvider(s: Settings): Provider {
     case 'anthropic':
       if (!s.anthropicApiKey) throw new ProviderError('Claude API key is missing — add it in Settings.');
       return new AnthropicProvider(s.anthropicApiKey, s.anthropicModel || 'claude-opus-5-5', s.effort);
+    case 'atlas': {
+      if (!s.atlasApiKey) throw new ProviderError('Atlas API key is missing — add it in Settings (the key comes from the Atlas Telegram bot).');
+      if (!s.atlasModel) throw new ProviderError('Atlas model is not selected — open Settings, load the model list and pick one.');
+      const make = (protocol: WireProtocol) => new OpenAICompatProvider({ id: 'atlas', baseUrl: ATLAS_BASE_URL, apiKey: s.atlasApiKey, model: s.atlasModel, protocol, label: 'Atlas API' });
+      // If the service rejects one wire protocol with 404, switch to the other one and remember it.
+      return withProtocolFallback(make(s.atlasProtocol || 'responses'), make, async (p) => {
+        await saveSettings({ ...s, atlasProtocol: p });
+      });
+    }
     case 'openai':
       if (!s.openaiApiKey) throw new ProviderError('OpenAI API key is missing — add it in Settings.');
       return new OpenAICompatProvider({ id: 'openai', baseUrl: s.openaiBaseUrl || 'https://api.openai.com/v1', apiKey: s.openaiApiKey, model: s.openaiModel, label: 'OpenAI' });
@@ -31,6 +41,34 @@ export function createProvider(s: Settings): Provider {
       return new OpenAICompatProvider({ id: 'custom', baseUrl: p.baseUrl, apiKey: p.apiKey, model: p.model, protocol: p.protocol, label: p.name || 'Custom provider' });
     }
   }
+}
+
+function withProtocolFallback(primary: OpenAICompatProvider, make: (p: WireProtocol) => OpenAICompatProvider, onSwitch: (p: WireProtocol) => Promise<void>): Provider {
+  let active: OpenAICompatProvider = primary;
+  return {
+    id: primary.id,
+    get rawKey() {
+      return active.rawKey;
+    },
+    get model() {
+      return active.model;
+    },
+    async run(req: RunRequest): Promise<TurnResult> {
+      try {
+        return await active.run(req);
+      } catch (err) {
+        if (err instanceof ProviderError && err.status === 404) {
+          const other: WireProtocol = active.protocol === 'responses' ? 'chat' : 'responses';
+          const fallback = make(other);
+          const result = await fallback.run(req);
+          active = fallback;
+          await onSwitch(other).catch(() => undefined);
+          return result;
+        }
+        throw err;
+      }
+    },
+  };
 }
 
 export { ProviderError } from './types.ts';
