@@ -1,0 +1,32 @@
+.nubit-badges {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 5;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+  font-family: Roboto, Arial, sans-serif;
+}
+.nubit-badge {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(2px);
+  white-space: nowrap;
+  cursor: default;
+}
+.nubit-badge.tier-low { color: #d4d4d8; }
+.nubit-badge.tier-mid { color: #93c5fd; }
+.nubit-badge.tier-high { color: #86efac; }
+.nubit-badge.tier-hot { color: #fdba74; }
+.nubit-badge.outlier.tier-hot { background: rgba(234, 88, 12, 0.9); color: #fff; }
+.nubit-badge.outlier.tier-high { background: rgba(22, 163, 74, 0.9); color: #fff; }

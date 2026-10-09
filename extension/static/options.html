@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nubit — Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <span class="logo"></span>
+      <div>
+        <h1>Nubit</h1>
+        <p id="subtitle" class="muted"></p>
+      </div>
+      <span class="spacer"></span>
+      <label class="lang"><span id="lbl-language"></span>
+        <select id="language"><option value="ru">Русский</option><option value="en">English</option></select>
+      </label>
+    </header>
+
+    <section class="card">
+      <h2 id="h-ai"></h2>
+      <div class="row">
+        <label id="lbl-provider" for="provider"></label>
+        <select id="provider">
+          <option value="anthropic">Claude (Anthropic)</option>
+          <option value="openai">OpenAI (GPT)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="ollama">Ollama (local)</option>
+        </select>
+      </div>
+
+      <div class="prov" data-prov="anthropic">
+        <div class="row"><label for="anthropicApiKey">Anthropic API key</label><input id="anthropicApiKey" type="password" placeholder="sk-ant-…" autocomplete="off" /></div>
+        <div class="row"><label for="anthropicModel" id="lbl-model-a"></label>
+          <select id="anthropicModel"></select>
+        </div>
+        <p class="hint" id="hint-anthropic"></p>
+      </div>
+      <div class="prov" data-prov="openai">
+        <div class="row"><label for="openaiApiKey">OpenAI API key</label><input id="openaiApiKey" type="password" placeholder="sk-…" autocomplete="off" /></div>
+        <div class="row"><label for="openaiModel" id="lbl-model-o"></label><input id="openaiModel" /></div>
+        <div class="row"><label for="openaiBaseUrl">Base URL</label><input id="openaiBaseUrl" /></div>
+      </div>
+      <div class="prov" data-prov="gemini">
+        <div class="row"><label for="geminiApiKey">Gemini API key</label><input id="geminiApiKey" type="password" autocomplete="off" /></div>
+        <div class="row"><label for="geminiModel" id="lbl-model-g"></label><input id="geminiModel" /></div>
+      </div>
+      <div class="prov" data-prov="ollama">
+        <div class="row"><label for="ollamaBaseUrl">Ollama URL</label><input id="ollamaBaseUrl" /></div>
+        <div class="row"><label for="ollamaModel" id="lbl-model-l"></label><input id="ollamaModel" /></div>
+        <p class="hint" id="hint-ollama"></p>
+      </div>
+
+      <div class="row"><label for="effort" id="lbl-effort"></label>
+        <select id="effort">
+          <option value="low">low</option>
+          <option value="medium">medium</option>
+          <option value="high">high</option>
+          <option value="xhigh">xhigh</option>
+        </select>
+      </div>
+      <p class="hint" id="hint-effort"></p>
+      <div class="row-actions">
+        <button id="test-provider" class="btn"></button>
+        <span id="test-provider-result" class="result"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 id="h-yt"></h2>
+      <div class="row"><label for="youtubeApiKey">YouTube Data API key</label><input id="youtubeApiKey" type="password" autocomplete="off" /></div>
+      <p class="hint" id="hint-yt"></p>
+    </section>
+
+    <section class="card">
+      <h2 id="h-display"></h2>
+      <label class="check"><input type="checkbox" id="showOverlay" /> <span id="lbl-overlay"></span></label>
+      <label class="check"><input type="checkbox" id="showBadges" /> <span id="lbl-badges"></span></label>
+      <label class="check"><input type="checkbox" id="computeOutliers" /> <span id="lbl-outliers"></span></label>
+    </section>
+
+    <section class="card">
+      <h2 id="h-local"></h2>
+      <p class="hint" id="hint-local"></p>
+      <div class="row-actions">
+        <button id="native-ping" class="btn"></button>
+        <span id="native-result" class="result"></span>
+      </div>
+      <p class="hint"><span id="lbl-extid"></span> <code id="ext-id"></code> <button id="copy-extid" class="btn small"></button></p>
+      <table class="tools" id="local-tools">
+        <thead><tr><th id="th-name"></th><th id="th-path"></th><th id="th-desc"></th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <button id="add-tool" class="btn"></button>
+    </section>
+
+    <section class="card">
+      <h2 id="h-apis"></h2>
+      <p class="hint" id="hint-apis"></p>
+      <div id="custom-apis"></div>
+      <button id="add-api" class="btn"></button>
+    </section>
+
+    <footer class="save-bar">
+      <button id="save" class="btn primary"></button>
+      <span id="save-result" class="result"></span>
+    </footer>
+  </div>
+  <script src="options.js"></script>
+</body>
+</html>

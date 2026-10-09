@@ -1,0 +1,71 @@
+{
+  "manifest_version": 3,
+  "name": "Nubit — AI YouTube Analyst",
+  "description": "Smart YouTube analytics and AI assistant: VPH, outliers, SEO score, keyword research, titles/tags, transcripts — powered by your own API keys.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "Nubit — open AI panel",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "nativeMessaging",
+    "tabs",
+    "scripting"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://i.ytimg.com/*",
+    "https://www.googleapis.com/*",
+    "https://suggestqueries.google.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content-main.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*.png"],
+      "matches": ["https://www.youtube.com/*"]
+    }
+  ]
+}

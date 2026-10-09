@@ -1,0 +1,6 @@
+node_modules/
+.smoke/
+native-host/host.log
+native-host/com.nubit.host.json
+*.log
+.DS_Store

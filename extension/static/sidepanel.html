@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nubit</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+  <header class="top">
+    <span class="logo"></span>
+    <div class="titles">
+      <div class="name">Nubit</div>
+      <div id="context" class="context"></div>
+    </div>
+    <button id="clear" class="icon" title="New chat">⟲</button>
+    <button id="settings" class="icon" title="Settings">⚙</button>
+  </header>
+
+  <div id="nokey" class="nokey hidden">
+    <p id="nokey-text"></p>
+    <button id="nokey-open" class="btn primary"></button>
+  </div>
+
+  <main id="messages" class="messages"></main>
+
+  <div id="actions" class="actions"></div>
+
+  <footer class="composer">
+    <textarea id="input" rows="2"></textarea>
+    <div class="composer-row">
+      <label class="ctx-toggle"><input type="checkbox" id="include-context" checked /> <span id="ctx-label"></span></label>
+      <span class="spacer"></span>
+      <button id="stop" class="btn hidden"></button>
+      <button id="send" class="btn primary"></button>
+    </div>
+  </footer>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
