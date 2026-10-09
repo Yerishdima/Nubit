@@ -63,6 +63,7 @@
 .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag:hover { background: var(--nb-line); }
+a.tag { text-decoration: none; display: inline-block; }
 .tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }
 .tag .rank.top { color: var(--nb-good); }
 .tag .rank.none { color: var(--nb-fg2); opacity: .6; }

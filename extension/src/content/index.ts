@@ -8,6 +8,7 @@ import { askMain } from './bridge.ts';
 import { currentVideoId, domChannelHeader, domListVideos, domVisibleComments, domWatchExtras, pageKind, searchQuery } from './extract.ts';
 import { createOverlay, type Overlay, type OverlayState } from './overlay.ts';
 import { startBadges } from './badges.ts';
+import { hideSearchPanel, showSearchPanel } from './searchpanel.ts';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -66,6 +67,10 @@ async function handleNavigation(force = false): Promise<void> {
   const kind = pageKind();
   if (kind === 'channel') mountChannelPill();
   else channelPill?.remove();
+  if (kind === 'search' && settings.showOverlay) {
+    const q = searchQuery();
+    if (q) void showSearchPanel(q);
+  } else hideSearchPanel();
   if (kind !== 'watch') {
     overlay?.remove();
     overlay = null;

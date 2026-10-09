@@ -41,8 +41,8 @@
   var KEY = "settings";
   async function loadSettings() {
     const stored = await chrome.storage.local.get(KEY);
-    const s = stored[KEY] ?? {};
-    const merged = { ...DEFAULT_SETTINGS, ...s };
+    const s2 = stored[KEY] ?? {};
+    const merged = { ...DEFAULT_SETTINGS, ...s2 };
     const names = new Set(merged.localTools.map((t2) => t2.name));
     for (const t2 of DEFAULT_LOCAL_TOOLS) if (!names.has(t2.name)) merged.localTools.push({ ...t2 });
     return merged;
@@ -156,6 +156,9 @@
   function setLang(l) {
     lang = l;
   }
+  function getLang() {
+    return lang;
+  }
   function t(key) {
     return dict[key][lang];
   }
@@ -188,8 +191,8 @@
     if (sec === void 0 || !isFinite(sec)) return "\u2014";
     const h = Math.floor(sec / 3600);
     const m = Math.floor(sec % 3600 / 60);
-    const s = Math.floor(sec % 60);
-    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}` : `${m}:${String(s).padStart(2, "0")}`;
+    const s2 = Math.floor(sec % 60);
+    return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(s2).padStart(2, "0")}` : `${m}:${String(s2).padStart(2, "0")}`;
   }
 
   // src/shared/metrics.ts
@@ -361,8 +364,8 @@
       label: SEO_LABELS[id][lang2][0],
       hint: SEO_LABELS[id][lang2][1]
     }));
-    const total = checks.reduce((s, c) => s + c.weight, 0);
-    const got = checks.reduce((s, c) => s + (c.ok ? c.weight : 0), 0);
+    const total = checks.reduce((s2, c) => s2 + c.weight, 0);
+    const got = checks.reduce((s2, c) => s2 + (c.ok ? c.weight : 0), 0);
     return { score: Math.round(got / total * 100), checks };
   }
   function computeMetrics(video, lang2 = "ru", channelViews, now = Date.now()) {
@@ -568,9 +571,9 @@
   }
   var LIKE_WORD = /like|нравится|лайк|подоба|вподоба/i;
   function parseLikesFromStrings(strings) {
-    for (const s of strings) {
-      if (s.length > 160 || !LIKE_WORD.test(s)) continue;
-      const m = s.match(/(\d[\d,.\s ]*)/);
+    for (const s2 of strings) {
+      if (s2.length > 160 || !LIKE_WORD.test(s2)) continue;
+      const m = s2.match(/(\d[\d,.\s ]*)/);
       if (!m) continue;
       const n = parseCompactNumber(m[1]);
       if (n !== void 0 && n > 0) return n;
@@ -687,10 +690,10 @@
     return out;
   }
   var LIST_SELECTOR = "ytd-video-renderer, ytd-compact-video-renderer, ytd-grid-video-renderer, ytd-rich-item-renderer, ytd-playlist-video-renderer, yt-lockup-view-model";
-  function domListVideos(root = document, max = 200) {
+  function domListVideos(root2 = document, max = 200) {
     const out = [];
     const seen = /* @__PURE__ */ new Set();
-    for (const el of root.querySelectorAll(LIST_SELECTOR)) {
+    for (const el of root2.querySelectorAll(LIST_SELECTOR)) {
       if (out.length >= max) break;
       if (el.tagName === "YT-LOCKUP-VIEW-MODEL" && el.closest("ytd-rich-item-renderer, ytd-video-renderer, ytd-compact-video-renderer")) continue;
       const v = domListVideo(el);
@@ -716,13 +719,13 @@
       el.querySelectorAll(
         "#metadata-line span, span.inline-metadata-item, yt-content-metadata-view-model span, .yt-content-metadata-view-model-wiz__metadata-text, .yt-content-metadata-view-model__metadata-text, #metadata span"
       )
-    ).map((s) => text(s)).filter((s) => s && s !== "\u2022");
+    ).map((s2) => text(s2)).filter((s2) => s2 && s2 !== "\u2022");
     const viewsText = spans.find(isViewsText);
     const ageText = spans.find(isAgeText);
     if (!channelName) {
-      channelName = spans.find((s) => s !== viewsText && s !== ageText && !/view|просмотр|перегляд|ago|назад|тому|watching/i.test(s) && !/^\d/.test(s)) ?? "";
+      channelName = spans.find((s2) => s2 !== viewsText && s2 !== ageText && !/view|просмотр|перегляд|ago|назад|тому|watching/i.test(s2) && !/^\d/.test(s2)) ?? "";
     }
-    const durText = Array.from(el.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer span, .yt-badge-shape__text, badge-shape .yt-badge-shape__text, .ytd-thumbnail-overlay-time-status-renderer")).map((s) => text(s)).find((s) => /^\d+:\d\d/.test(s));
+    const durText = Array.from(el.querySelectorAll("ytd-thumbnail-overlay-time-status-renderer span, .yt-badge-shape__text, badge-shape .yt-badge-shape__text, .ytd-thumbnail-overlay-time-status-renderer")).map((s2) => text(s2)).find((s2) => /^\d+:\d\d/.test(s2));
     const live = !!el.querySelector('[overlay-style="LIVE"], .badge-style-type-live-now, ytd-badge-supported-renderer .badge-style-type-live-now') || /watching|смотр|дивля/i.test(viewsText ?? "");
     const v = {
       videoId: id,
@@ -741,8 +744,8 @@
   }
   function domChannelHeader() {
     const ch = { url: location.href.split("?")[0] };
-    const root = document.querySelector("#page-header, ytd-c4-tabbed-header-renderer, #channel-header, yt-page-header-renderer");
-    const name = text(root?.querySelector("h1, #channel-name, yt-dynamic-text-view-model h1, .page-header-view-model-wiz__page-header-title"));
+    const root2 = document.querySelector("#page-header, ytd-c4-tabbed-header-renderer, #channel-header, yt-page-header-renderer");
+    const name = text(root2?.querySelector("h1, #channel-name, yt-dynamic-text-view-model h1, .page-header-view-model-wiz__page-header-title"));
     if (name) ch.name = name;
     const m = location.pathname.match(/^\/(@[^/]+)/);
     if (m) ch.handle = m[1];
@@ -751,11 +754,11 @@
     const metaLink = document.querySelector('link[rel="canonical"]');
     const canon = metaLink?.getAttribute("href");
     if (!ch.channelId && canon) Object.assign(ch, channelFromHref(canon));
-    const strings = Array.from(root?.querySelectorAll("span, yt-formatted-string") ?? []).map((s) => text(s));
-    for (const s of strings) {
-      if (ch.subscribers === void 0 && /subscriber|подписчик|підписник/i.test(s) && /\d/.test(s)) ch.subscribers = parseCompactNumber(s);
-      else if (ch.videoCount === void 0 && /\bvideos?\b|видео|відео/i.test(s) && /^\s*[\d.,\s]+\s*(k|m|тыс|млн)?\.?\s*\S+$/i.test(s)) ch.videoCount = parseCompactNumber(s);
-      else if (!ch.handle && /^@[\w.-]+$/.test(s)) ch.handle = s;
+    const strings = Array.from(root2?.querySelectorAll("span, yt-formatted-string") ?? []).map((s2) => text(s2));
+    for (const s2 of strings) {
+      if (ch.subscribers === void 0 && /subscriber|подписчик|підписник/i.test(s2) && /\d/.test(s2)) ch.subscribers = parseCompactNumber(s2);
+      else if (ch.videoCount === void 0 && /\bvideos?\b|видео|відео/i.test(s2) && /^\s*[\d.,\s]+\s*(k|m|тыс|млн)?\.?\s*\S+$/i.test(s2)) ch.videoCount = parseCompactNumber(s2);
+      else if (!ch.handle && /^@[\w.-]+$/.test(s2)) ch.handle = s2;
     }
     const desc = text(document.querySelector("#page-header yt-description-preview-view-model, #channel-header #description, yt-description-preview-view-model"));
     if (desc) ch.description = desc.slice(0, 500);
@@ -763,12 +766,12 @@
   }
 
   // src/shared/markdown.ts
-  function escapeHtml(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  function escapeHtml(s2) {
+    return s2.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
 
   // src/content/overlay.css
-  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\n.tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }\n.tag .rank.top { color: var(--nb-good); }\n.tag .rank.none { color: var(--nb-fg2); opacity: .6; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n.toast { position: fixed; right: 20px; bottom: 20px; background: var(--nb-fg); color: var(--nb-bg); padding: 8px 12px; border-radius: 8px; font-size: 12px; z-index: 2147483000; }\n';
+  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\na.tag { text-decoration: none; display: inline-block; }\n.tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }\n.tag .rank.top { color: var(--nb-good); }\n.tag .rank.none { color: var(--nb-fg2); opacity: .6; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n.toast { position: fixed; right: 20px; bottom: 20px; background: var(--nb-fg); color: var(--nb-bg); padding: 8px 12px; border-radius: 8px; font-size: 12px; z-index: 2147483000; }\n';
 
   // src/content/overlay.ts
   var HOST_ID = "nubit-overlay-host";
@@ -777,21 +780,21 @@
   }
   function createOverlay(onAction) {
     document.getElementById(HOST_ID)?.remove();
-    const host = document.createElement("div");
-    host.id = HOST_ID;
-    const shadow = host.attachShadow({ mode: "open" });
+    const host2 = document.createElement("div");
+    host2.id = HOST_ID;
+    const shadow = host2.attachShadow({ mode: "open" });
     const style = document.createElement("style");
     style.textContent = overlay_default;
     shadow.appendChild(style);
-    const root = document.createElement("div");
-    shadow.appendChild(root);
+    const root2 = document.createElement("div");
+    shadow.appendChild(root2);
     let state = {};
     let showChecks = false;
-    const render = () => {
-      host.setAttribute("data-theme", isDark() ? "dark" : "light");
-      root.innerHTML = html(state, showChecks);
+    const render2 = () => {
+      host2.setAttribute("data-theme", isDark() ? "dark" : "light");
+      root2.innerHTML = html(state, showChecks);
     };
-    root.addEventListener("click", (e) => {
+    root2.addEventListener("click", (e) => {
       const target = e.target.closest("[data-action],[data-tag],[data-toggle]");
       if (!target) return;
       if (target.dataset.action) {
@@ -805,18 +808,18 @@
         });
       } else if (target.dataset.toggle === "checks") {
         showChecks = !showChecks;
-        render();
+        render2();
       }
     });
-    render();
+    render2();
     return {
-      host,
+      host: host2,
       update(next) {
         state = next;
-        render();
+        render2();
       },
       remove() {
-        host.remove();
+        host2.remove();
       },
       toast(msg) {
         const el = document.createElement("div");
@@ -830,15 +833,15 @@
   function tile(key, value, sub, tier, title) {
     return `<div class="tile ${tier ?? ""}" ${title ? `title="${escapeHtml(title)}"` : ""}><div class="v">${value}</div><div class="k">${key}${sub ? ` <span class="s">${sub}</span>` : ""}</div></div>`;
   }
-  function html(s, showChecks) {
-    const v = s.video;
-    const m = s.metrics;
+  function html(s2, showChecks) {
+    const v = s2.video;
+    const m = s2.metrics;
     if (!v) return `<div class="card"><div class="head"><span class="logo"></span><span class="title">${t("app_name")}</span><span class="pill">${t("loading")}</span></div></div>`;
     const seo = m?.seo;
     const seoClass = seo ? seo.score >= 75 ? "good" : seo.score >= 50 ? "warn" : "bad" : "";
     const tiles = [];
     tiles.push(tile(t("vph"), formatCompact(m?.vph), void 0, m?.vph !== void 0 ? vphTier(m.vph) : void 0, t("vph_full")));
-    tiles.push(tile(t("vph_recent"), s.vphRecent !== void 0 ? formatCompact(s.vphRecent) + "/" + t("t_hour") : "\u2014", void 0, s.vphRecent !== void 0 ? vphTier(s.vphRecent) : "low", t("vph_recent_full")));
+    tiles.push(tile(t("vph_recent"), s2.vphRecent !== void 0 ? formatCompact(s2.vphRecent) + "/" + t("t_hour") : "\u2014", void 0, s2.vphRecent !== void 0 ? vphTier(s2.vphRecent) : "low", t("vph_recent_full")));
     tiles.push(tile(t("views"), formatCompact(v.views)));
     tiles.push(tile(t("age"), formatAge(m?.ageHours), v.durationSec ? formatDuration(v.durationSec) : void 0));
     tiles.push(tile(t("likes"), formatCompact(v.likes), m?.likeRate !== void 0 ? formatPercent(m.likeRate) : void 0));
@@ -848,14 +851,14 @@
     if (m?.outlier !== void 0) {
       outlierVal = (m.outlier >= 10 ? m.outlier.toFixed(0) : m.outlier.toFixed(1)) + "\xD7";
       outlierTierCls = outlierTier(m.outlier);
-    } else if (s.outlierPending) outlierVal = "\u2026";
+    } else if (s2.outlierPending) outlierVal = "\u2026";
     tiles.push(
       tile(
         t("outlier"),
         outlierVal,
         m?.channelSampleSize ? `n=${m.channelSampleSize}` : void 0,
         outlierTierCls,
-        s.outlierError ?? (m?.channelMedianViews ? `${t("outlier_full")} (${formatCompact(m.channelMedianViews)})` : t("outlier_full"))
+        s2.outlierError ?? (m?.channelMedianViews ? `${t("outlier_full")} (${formatCompact(m.channelMedianViews)})` : t("outlier_full"))
       )
     );
     tiles.push(tile(t("subscribers"), formatCompact(v.subscribers), m?.engagementRate !== void 0 ? `${t("engagement").slice(0, 4)}. ${formatPercent(m.engagementRate)}` : void 0, void 0, t("engagement_full")));
@@ -863,7 +866,7 @@
       (c) => `<li class="${c.ok ? "ok" : "no"}"><span class="ic">${c.ok ? "\u2713" : "\u2717"}</span><span>${escapeHtml(c.label)}${c.ok ? "" : `<span class="hint">${escapeHtml(c.hint)}</span>`}</span></li>`
     ).join("")}</ul>` : "";
     const tags = v.tags ?? [];
-    const ranks = new Map((s.tagRanks ?? []).map((r) => [r.tag.toLowerCase(), r]));
+    const ranks = new Map((s2.tagRanks ?? []).map((r) => [r.tag.toLowerCase(), r]));
     const rankBadge = (tag) => {
       const r = ranks.get(tag.toLowerCase());
       if (!r) return "";
@@ -871,9 +874,9 @@
     };
     const tagsHtml = tags.length ? `<div class="tags">${tags.slice(0, 40).map((tag) => `<button class="tag" data-tag="${escapeHtml(tag)}" title="${t("copy")}">${escapeHtml(tag)}${rankBadge(tag)}</button>`).join("")}${tags.length > 40 ? `<span class="small">+${tags.length - 40}</span>` : ""}</div>
        <div class="row"><span class="small">${t("tags")}: ${tags.length}</span><button class="link" data-tag="*">${t("copy_all_tags")}</button>
-         <button class="link" data-action="tagranks" ${s.tagRanksPending ? "disabled" : ""}>${s.tagRanksPending ? t("computing") : t("tag_ranks")}</button></div>
-       ${s.tagRanks?.length ? `<div class="small">${t("tag_ranks_hint")}</div>` : ""}` : `<div class="muted">${t("no_tags")}</div>`;
-    const chKw = s.channelKeywords?.length ? `<div class="small" style="margin-top:6px">${t("channel_tags")}: ${escapeHtml(s.channelKeywords.slice(0, 12).join(", "))}${s.channelKeywords.length > 12 ? ` +${s.channelKeywords.length - 12}` : ""}</div>` : "";
+         <button class="link" data-action="tagranks" ${s2.tagRanksPending ? "disabled" : ""}>${s2.tagRanksPending ? t("computing") : t("tag_ranks")}</button></div>
+       ${s2.tagRanks?.length ? `<div class="small">${t("tag_ranks_hint")}</div>` : ""}` : `<div class="muted">${t("no_tags")}</div>`;
+    const chKw = s2.channelKeywords?.length ? `<div class="small" style="margin-top:6px">${t("channel_tags")}: ${escapeHtml(s2.channelKeywords.slice(0, 12).join(", "))}${s2.channelKeywords.length > 12 ? ` +${s2.channelKeywords.length - 12}` : ""}</div>` : "";
     const caps = v.captionTracks?.length ? `<div class="small">${t("captions")}: ${escapeHtml(
       v.captionTracks.slice(0, 6).map((c) => `${c.lang}${c.auto ? ` (${t("auto")})` : ""}`).join(", ")
     )}${v.captionTracks.length > 6 ? ` +${v.captionTracks.length - 6}` : ""}</div>` : "";
@@ -991,6 +994,116 @@
     return p;
   }
 
+  // src/content/searchpanel.ts
+  var HOST_ID2 = "nubit-search-host";
+  var cache = /* @__PURE__ */ new Map();
+  var host = null;
+  var root = null;
+  var currentQuery = "";
+  var L = {
+    ru: {
+      title: "\u0410\u043D\u0430\u043B\u0438\u0437 \u0437\u0430\u043F\u0440\u043E\u0441\u0430",
+      demand: "\u0421\u043F\u0440\u043E\u0441",
+      competition: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0446\u0438\u044F",
+      exact: "\u0442\u043E\u0447\u043D\u044B\u0445 \u0441\u043E\u0432\u043F\u0430\u0434\u0435\u043D\u0438\u0439 \u0432 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u044F\u0445",
+      median: "\u043C\u0435\u0434\u0438\u0430\u043D\u0430 \u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432 \u0432 \u0442\u043E\u043F\u0435",
+      age: "\u043C\u0435\u0434\u0438\u0430\u043D\u043D\u044B\u0439 \u0432\u043E\u0437\u0440\u0430\u0441\u0442",
+      recent: "\u0441\u0432\u0435\u0436\u0438\u0445 (< 6 \u043C\u0435\u0441)",
+      winners: "\u041D\u0435\u0431\u043E\u043B\u044C\u0448\u0438\u0435 \u043A\u0430\u043D\u0430\u043B\u044B \u0432 \u0442\u043E\u043F\u0435",
+      related: "\u041F\u043E\u0445\u043E\u0436\u0438\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u044B",
+      ai: "\u0418\u0418-\u0430\u043D\u0430\u043B\u0438\u0437 \u0437\u0430\u043F\u0440\u043E\u0441\u0430",
+      ideas: "\u0418\u0434\u0435\u0438 \u0434\u043B\u044F \u0432\u0438\u0434\u0435\u043E",
+      loading: "\u0441\u0447\u0438\u0442\u0430\u044E\u2026",
+      note: "\u041E\u0446\u0435\u043D\u043A\u0438 \u043F\u043E \u0430\u0432\u0442\u043E\u043F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430\u043C \u0438 \u0442\u043E\u043F\u0443 \u0432\u044B\u0434\u0430\u0447\u0438; YouTube \u043D\u0435 \u043F\u0443\u0431\u043B\u0438\u043A\u0443\u0435\u0442 \u043E\u0431\u044A\u0451\u043C \u043F\u043E\u0438\u0441\u043A\u0430.",
+      subs: "\u043F\u043E\u0434\u043F."
+    },
+    en: {
+      title: "Keyword analysis",
+      demand: "Demand",
+      competition: "Competition",
+      exact: "exact matches in titles",
+      median: "median views in the top",
+      age: "median age",
+      recent: "recent (< 6 mo)",
+      winners: "Small channels ranking",
+      related: "Related queries",
+      ai: "AI keyword research",
+      ideas: "Video ideas",
+      loading: "computing\u2026",
+      note: "Estimates from autocomplete and the top results; YouTube publishes no search volume.",
+      subs: "subs"
+    }
+  };
+  function s(k) {
+    return L[getLang()][k];
+  }
+  function isDark2() {
+    return document.documentElement.hasAttribute("dark");
+  }
+  function meter(label, value, invert = false) {
+    const v = value ?? 0;
+    const tier = invert ? v >= 70 ? "bad" : v >= 40 ? "warn" : "good" : v >= 70 ? "good" : v >= 40 ? "warn" : "bad";
+    return `<div class="row" style="margin-top:6px"><span class="lbl" style="width:95px">${label}</span><div class="bar"><i style="width:${Math.max(2, Math.min(100, v))}%"></i></div><span class="pill ${tier}">${value === void 0 ? "\u2014" : Math.round(v)}</span></div>`;
+  }
+  function render(state) {
+    if (!root || !host) return;
+    host.setAttribute("data-theme", isDark2() ? "dark" : "light");
+    const r = state.report;
+    const body = state.loading ? `<div class="muted">${s("loading")}</div>` : state.error ? `<div class="muted">${escapeHtml(state.error)}</div>` : r ? `${meter(s("demand"), r.demand)}${meter(s("competition"), r.competition, true)}
+           <div class="small" style="margin-top:8px">${r.exactInTitle}/${r.resultCount} ${s("exact")} \xB7 ${s("median")}: ${formatCompact(r.medianViews)} \xB7 ${s("age")}: ${formatAge(r.medianAgeDays !== void 0 ? r.medianAgeDays * 24 : void 0)} \xB7 ${Math.round(r.recentShare * 100)}% ${s("recent")}</div>
+           ${r.smallChannelWinners.length ? `<div class="small" style="margin-top:8px">${s("winners")}:</div><div class="tags">${r.smallChannelWinners.slice(0, 4).map((v) => `<a class="tag" href="/watch?v=${v.videoId}" title="${escapeHtml(v.title)}">${escapeHtml(v.title.slice(0, 40))}${v.title.length > 40 ? "\u2026" : ""} \xB7 ${formatCompact(v.views)} \xB7 ${formatCompact(v.subscribers)} ${s("subs")}</a>`).join("")}</div>` : ""}
+           ${r.suggestions.length ? `<div class="small" style="margin-top:8px">${s("related")}:</div><div class="tags">${r.suggestions.slice(0, 14).map((q) => `<a class="tag" href="/results?search_query=${encodeURIComponent(q)}">${escapeHtml(q)}</a>`).join("")}</div>` : ""}
+           <div class="small" style="margin-top:8px">${s("note")}</div>` : "";
+    root.innerHTML = `<div class="card">
+    <div class="head"><span class="logo"></span><span class="title">${t("app_name")} \xB7 ${s("title")}: \xAB${escapeHtml(state.query)}\xBB</span></div>
+    ${body}
+    <div class="actions">
+      <button class="btn primary" data-action="keyword_research">${s("ai")}</button>
+      <button class="btn" data-action="content_ideas">${s("ideas")}</button>
+    </div>
+  </div>`;
+  }
+  function mount() {
+    if (!host) {
+      host = document.createElement("div");
+      host.id = HOST_ID2;
+      const shadow = host.attachShadow({ mode: "open" });
+      const style = document.createElement("style");
+      style.textContent = overlay_default;
+      shadow.appendChild(style);
+      root = document.createElement("div");
+      shadow.appendChild(root);
+      root.addEventListener("click", (e) => {
+        const el = e.target.closest("[data-action]");
+        if (!el) return;
+        chrome.runtime.sendMessage({ type: "openSidePanel", action: el.dataset.action }).catch(() => void 0);
+      });
+    }
+    const target = document.querySelector("ytd-search #container, ytd-search #contents, ytd-two-column-search-results-renderer #primary, #primary");
+    if (target && host.parentElement !== target) target.prepend(host);
+    else if (!target && !host.isConnected) setTimeout(mount, 700);
+  }
+  async function showSearchPanel(query) {
+    currentQuery = query;
+    mount();
+    const cached = cache.get(query);
+    render({ query, loading: !cached, report: cached });
+    if (cached) return;
+    try {
+      const res = await chrome.runtime.sendMessage({ type: "analyzeKeyword", query, lang: getLang() });
+      if (currentQuery !== query) return;
+      if (!res || "error" in res) throw new Error(res && "error" in res ? res.error : "no response");
+      cache.set(query, res);
+      render({ query, report: res });
+    } catch (err) {
+      if (currentQuery === query) render({ query, error: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  function hideSearchPanel() {
+    currentQuery = "";
+    host?.remove();
+  }
+
   // src/content/index.ts
   var settings;
   var overlay = null;
@@ -1001,10 +1114,10 @@
   async function init() {
     settings = await loadSettings();
     setLang(settings.language);
-    onSettingsChanged((s) => {
-      settings = s;
-      setLang(s.language);
-      if (!s.showOverlay) {
+    onSettingsChanged((s2) => {
+      settings = s2;
+      setLang(s2.language);
+      if (!s2.showOverlay) {
         overlay?.remove();
         overlay = null;
       }
@@ -1040,6 +1153,10 @@
     const kind = pageKind();
     if (kind === "channel") mountChannelPill();
     else channelPill?.remove();
+    if (kind === "search" && settings.showOverlay) {
+      const q = searchQuery();
+      if (q) void showSearchPanel(q);
+    } else hideSearchPanel();
     if (kind !== "watch") {
       overlay?.remove();
       overlay = null;
@@ -1147,9 +1264,9 @@
   var channelPill = null;
   function mountChannelPill() {
     if (channelPill?.isConnected) return;
-    const host = document.createElement("div");
-    host.id = "nubit-channel-pill";
-    const shadow = host.attachShadow({ mode: "open" });
+    const host2 = document.createElement("div");
+    host2.id = "nubit-channel-pill";
+    const shadow = host2.attachShadow({ mode: "open" });
     shadow.innerHTML = `<style>
     :host { all: initial; position: fixed; right: 20px; bottom: 20px; z-index: 2147483000; font-family: Roboto, Arial, sans-serif; }
     button { border: 0; background: #4f46e5; color: #fff; border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.25); font-family: inherit; }
@@ -1168,8 +1285,8 @@
         setTimeout(() => el.remove(), 2e3);
       });
     });
-    document.body.appendChild(host);
-    channelPill = host;
+    document.body.appendChild(host2);
+    channelPill = host2;
   }
   async function checkTagRanks() {
     const v = overlayState.video;
@@ -1186,15 +1303,15 @@
   }
   function mountOverlay(token) {
     if (!overlay || token !== navToken) return;
-    const host = overlay.host;
+    const host2 = overlay.host;
     const secondary = document.querySelector("#secondary-inner");
     const below = document.querySelector("#below");
     const target = secondary && secondary.clientWidth > 0 ? secondary : below;
     if (!target) {
-      if (!host.isConnected) setTimeout(() => mountOverlay(token), 700);
+      if (!host2.isConnected) setTimeout(() => mountOverlay(token), 700);
       return;
     }
-    if (host.parentElement !== target || target.firstElementChild !== host) target.prepend(host);
+    if (host2.parentElement !== target || target.firstElementChild !== host2) target.prepend(host2);
   }
   async function buildPageContext() {
     const kind = pageKind();

@@ -212,6 +212,11 @@ try {
   });
   check(sctx?.kind === 'search' && sctx.query === 'cats' && sctx.results?.length === 1, 'search context has the query and results');
   check(sctx?.results?.[0]?.views === 2_300_000 && sctx.results[0].channelHandle === '@cats', 'search result parsed from DOM');
+  await yt.waitForSelector('#nubit-search-host', { timeout: 10000 });
+  await yt.waitForFunction(() => !/computing|считаю/.test(document.getElementById('nubit-search-host')?.shadowRoot?.textContent ?? ''), null, { timeout: 40000 }).catch(() => null);
+  const spText = await yt.evaluate(() => document.getElementById('nubit-search-host')?.shadowRoot?.textContent?.replace(/\s+/g, ' ') ?? '');
+  console.log('search panel:', spText.slice(0, 200));
+  check(/Keyword analysis|Анализ запроса/.test(spText), 'search page shows the keyword panel');
   await yt.screenshot({ path: path.join(out, 'search.png') });
   check(ytErrors.length === 0, `youtube page has no extension errors (${ytErrors.join('; ')})`);
 
