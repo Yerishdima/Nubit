@@ -291,6 +291,7 @@ export function channelFromData(data: Any, url?: string): ChannelData {
     const m = vanity.match(/\/(@[^/?]+)/);
     if (m) ch.handle = m[1];
   }
+  if (typeof meta?.keywords === 'string' && meta.keywords.trim()) ch.keywords = parseChannelKeywords(meta.keywords);
   const header = data?.header ?? {};
   const strings = collectStrings(header, 400);
   for (const s of strings) {
@@ -300,6 +301,15 @@ export function channelFromData(data: Any, url?: string): ChannelData {
     else if (!ch.handle && /^@[\w.-]+$/.test(s)) ch.handle = s;
   }
   return ch;
+}
+
+/** `"multi word tag" single "another one"` → ["multi word tag", "single", "another one"]. */
+export function parseChannelKeywords(raw: string): string[] {
+  const out: string[] = [];
+  const re = /"([^"]+)"|(\S+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(raw))) out.push((m[1] ?? m[2]).trim());
+  return out.filter(Boolean);
 }
 
 /** Converts YouTube's json3 caption payload into readable timestamped text. */

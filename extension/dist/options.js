@@ -55,6 +55,25 @@
   async function saveSettings(settings2) {
     await chrome.storage.local.set({ [KEY]: settings2 });
   }
+  function activeCustomProvider(s) {
+    return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
+  }
+  function providerReady(s) {
+    switch (s.provider) {
+      case "anthropic":
+        return !!s.anthropicApiKey;
+      case "openai":
+        return !!s.openaiApiKey;
+      case "gemini":
+        return !!s.geminiApiKey;
+      case "ollama":
+        return !!s.ollamaBaseUrl;
+      case "custom": {
+        const p = activeCustomProvider(s);
+        return !!p && !!p.baseUrl && !!p.model;
+      }
+    }
+  }
 
   // src/shared/markdown.ts
   function escapeHtml(s) {
@@ -80,6 +99,11 @@
     subtitle: { ru: "\u0418\u0418-\u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A YouTube. \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043D\u0430 \u0432\u0430\u0448\u0438\u0445 \u043A\u043B\u044E\u0447\u0430\u0445 API.", en: "AI YouTube analyst. Runs on your own API keys." },
     "lbl-language": { ru: "\u042F\u0437\u044B\u043A", en: "Language" },
     "h-ai": { ru: "\u0418\u0418-\u043C\u043E\u0434\u0435\u043B\u044C", en: "AI model" },
+    "step1-title": { ru: "\u0428\u0430\u0433 1 \u0438\u0437 1: \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u0418\u0418", en: "Step 1 of 1: connect an AI" },
+    "step1-text": {
+      ru: "\u0412\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u043A\u043B\u044E\u0447 Claude \u0432 \u043F\u043E\u043B\u0435 \u043D\u0438\u0436\u0435 (console.anthropic.com \u2192 API Keys \u2192 Create key), \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u041F\u0440\u043E\u0432\u0435\u0440\u0438\u0442\u044C \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435\xBB, \u0437\u0430\u0442\u0435\u043C \xAB\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C\xBB. \u0412\u0441\u0451 \u043E\u0441\u0442\u0430\u043B\u044C\u043D\u043E\u0435 \u043D\u0430 \u044D\u0442\u043E\u0439 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u2014 \u043F\u043E \u0436\u0435\u043B\u0430\u043D\u0438\u044E. \u041F\u043E\u0442\u043E\u043C \u043E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u043B\u044E\u0431\u043E\u0435 \u0432\u0438\u0434\u0435\u043E \u043D\u0430 YouTube.",
+      en: 'Paste your Claude key below (console.anthropic.com \u2192 API Keys \u2192 Create key), press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.'
+    },
     "lbl-provider": { ru: "\u041F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440", en: "Provider" },
     "lbl-model-a": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
     "lbl-model-o": { ru: "\u041C\u043E\u0434\u0435\u043B\u044C", en: "Model" },
@@ -295,6 +319,7 @@
     $("ext-id").textContent = chrome.runtime.id;
     applyTexts(settings.language);
     showProvider();
+    $("step1").classList.toggle("hidden", providerReady(settings));
   }
   function renderTools(l) {
     const tbody = $("local-tools").querySelector("tbody");
@@ -409,6 +434,7 @@
   async function save() {
     settings = collect();
     await saveSettings(settings);
+    $("step1").classList.toggle("hidden", providerReady(settings));
     const out = $("save-result");
     out.textContent = tr("\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E", "Saved");
     out.className = "result ok";

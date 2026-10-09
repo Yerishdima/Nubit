@@ -25,6 +25,9 @@ body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 "Segoe
 .lang { display: flex; align-items: center; gap: 8px; color: var(--fg2); }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 16px; }
 .card h2 { margin: 0 0 12px; font-size: 16px; }
+.card.step { border-color: var(--accent); background: linear-gradient(135deg, rgba(79,70,229,.08), rgba(139,92,246,.08)); }
+.card.step p { margin: 0; }
+.hidden { display: none !important; }
 .row { display: grid; grid-template-columns: 200px 1fr; gap: 10px; align-items: center; margin: 8px 0; }
 .row label { color: var(--fg2); }
 input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }

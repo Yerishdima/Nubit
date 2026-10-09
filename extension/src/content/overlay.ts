@@ -1,5 +1,5 @@
 // The analytics card injected on watch pages (rendered inside a shadow root).
-import type { QuickActionId, VideoData, VideoMetrics } from '../shared/types.ts';
+import type { QuickActionId, TagRank, VideoData, VideoMetrics } from '../shared/types.ts';
 import { formatAge, formatCompact, formatDuration, formatPercent, t } from '../shared/i18n.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 import { outlierTier, vphTier } from '../shared/metrics.ts';
@@ -11,6 +11,9 @@ export interface OverlayState {
   vphRecent?: number;
   outlierPending?: boolean;
   outlierError?: string;
+  tagRanks?: TagRank[];
+  tagRanksPending?: boolean;
+  channelKeywords?: string[];
 }
 
 export interface Overlay {
@@ -25,7 +28,7 @@ function isDark(): boolean {
   return document.documentElement.hasAttribute('dark') || document.documentElement.getAttribute('data-theme') === 'dark';
 }
 
-export function createOverlay(onAction: (action: QuickActionId | 'chat') => void): Overlay {
+export function createOverlay(onAction: (action: QuickActionId | 'chat' | 'tagranks') => void): Overlay {
   document.getElementById(HOST_ID)?.remove();
   const host = document.createElement('div');
   host.id = HOST_ID;
@@ -47,7 +50,7 @@ export function createOverlay(onAction: (action: QuickActionId | 'chat') => void
     const target = (e.target as HTMLElement).closest<HTMLElement>('[data-action],[data-tag],[data-toggle]');
     if (!target) return;
     if (target.dataset.action) {
-      onAction(target.dataset.action as QuickActionId | 'chat');
+      onAction(target.dataset.action as QuickActionId | 'chat' | 'tagranks');
     } else if (target.dataset.tag !== undefined) {
       const tag = target.dataset.tag === '*' ? (state.video?.tags ?? []).join(', ') : target.dataset.tag;
       navigator.clipboard.writeText(tag).then(() => {
@@ -119,13 +122,24 @@ function html(s: OverlayState, showChecks: boolean): string {
     : '';
 
   const tags = v.tags ?? [];
+  const ranks = new Map((s.tagRanks ?? []).map((r) => [r.tag.toLowerCase(), r]));
+  const rankBadge = (tag: string) => {
+    const r = ranks.get(tag.toLowerCase());
+    if (!r) return '';
+    return r.rank ? `<b class="rank ${r.rank <= 3 ? 'top' : ''}">#${r.rank}</b>` : `<b class="rank none">—</b>`;
+  };
   const tagsHtml = tags.length
     ? `<div class="tags">${tags
         .slice(0, 40)
-        .map((tag) => `<button class="tag" data-tag="${escapeHtml(tag)}" title="${t('copy')}">${escapeHtml(tag)}</button>`)
+        .map((tag) => `<button class="tag" data-tag="${escapeHtml(tag)}" title="${t('copy')}">${escapeHtml(tag)}${rankBadge(tag)}</button>`)
         .join('')}${tags.length > 40 ? `<span class="small">+${tags.length - 40}</span>` : ''}</div>
-       <div class="row"><span class="small">${t('tags')}: ${tags.length}</span><button class="link" data-tag="*">${t('copy_all_tags')}</button></div>`
+       <div class="row"><span class="small">${t('tags')}: ${tags.length}</span><button class="link" data-tag="*">${t('copy_all_tags')}</button>
+         <button class="link" data-action="tagranks" ${s.tagRanksPending ? 'disabled' : ''}>${s.tagRanksPending ? t('computing') : t('tag_ranks')}</button></div>
+       ${s.tagRanks?.length ? `<div class="small">${t('tag_ranks_hint')}</div>` : ''}`
     : `<div class="muted">${t('no_tags')}</div>`;
+  const chKw = s.channelKeywords?.length
+    ? `<div class="small" style="margin-top:6px">${t('channel_tags')}: ${escapeHtml(s.channelKeywords.slice(0, 12).join(', '))}${s.channelKeywords.length > 12 ? ` +${s.channelKeywords.length - 12}` : ''}</div>`
+    : '';
 
   const caps = v.captionTracks?.length
     ? `<div class="small">${t('captions')}: ${escapeHtml(
@@ -141,6 +155,7 @@ function html(s: OverlayState, showChecks: boolean): string {
     <div class="grid">${tiles.join('')}</div>
     ${seo ? `<div class="row"><span class="lbl">${t('seo_score')}</span><div class="bar"><i style="width:${seo.score}%"></i></div><button class="link" data-toggle="checks">${showChecks ? t('hide_checks') : t('show_checks')}</button></div>${checks}` : ''}
     ${tagsHtml}
+    ${chKw}
     ${caps}
     <div class="actions">
       <button class="btn primary" data-action="analyze_video">${t('ai_analyze')}</button>

@@ -11,8 +11,10 @@ import { keywordReport, videoTags } from './keyword.ts';
 
 const youtube = new YouTube(loadSettings);
 
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener((details) => {
   chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => undefined);
+  // First install: open the settings so the user can paste a key right away.
+  if (details.reason === 'install') chrome.runtime.openOptionsPage().catch(() => undefined);
 });
 
 // ---- page context -----------------------------------------------------------
@@ -93,6 +95,8 @@ chrome.runtime.onMessage.addListener((msg: RuntimeMessage, sender, sendResponse)
       return reply(videoTags(youtube, msg.videoIds));
     case 'fetchImage':
       return reply(fetchImage(msg.url));
+    case 'tagRanks':
+      return reply(youtube.tagRanks(msg.videoId, msg.tags));
     case 'studioInsert': {
       // Relay from the side panel to the Studio tab's content script.
       return reply(activeYouTubeTabId().then((id) => (id === null ? { error: 'No YouTube Studio tab is active' } : chrome.tabs.sendMessage(id, msg))));

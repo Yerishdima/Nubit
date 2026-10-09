@@ -88,6 +88,9 @@
     tags: { ru: "\u0422\u0435\u0433\u0438", en: "Tags" },
     no_tags: { ru: "\u0422\u0435\u0433\u043E\u0432 \u043D\u0435\u0442", en: "No tags" },
     copy_all_tags: { ru: "\u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0432\u0441\u0435", en: "Copy all" },
+    tag_ranks: { ru: "\u041F\u043E\u0437\u0438\u0446\u0438\u0438 \u0432 \u043F\u043E\u0438\u0441\u043A\u0435", en: "Search ranks" },
+    tag_ranks_hint: { ru: "#N \u2014 \u043C\u0435\u0441\u0442\u043E \u044D\u0442\u043E\u0433\u043E \u0432\u0438\u0434\u0435\u043E \u0432 \u043F\u043E\u0438\u0441\u043A\u0435 YouTube \u043F\u043E \u0442\u0435\u0433\u0443 (\u0442\u043E\u043F-20); \xAB\u2014\xBB \u2014 \u043D\u0435 \u0432 \u0442\u043E\u043F-20.", en: `#N \u2014 this video's position in YouTube search for the tag (top 20); "\u2014" \u2014 not in the top 20.` },
+    channel_tags: { ru: "\u0422\u0435\u0433\u0438 \u043A\u0430\u043D\u0430\u043B\u0430", en: "Channel tags" },
     captions: { ru: "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B", en: "Captions" },
     auto: { ru: "\u0430\u0432\u0442\u043E", en: "auto" },
     duration: { ru: "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C", en: "Duration" },
@@ -747,7 +750,7 @@
   }
 
   // src/content/overlay.css
-  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n';
+  var overlay_default = ':host {\n  all: initial;\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  color: var(--nb-fg, #0f0f0f);\n  --nb-bg: #fff;\n  --nb-bg2: #f2f2f2;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n.card {\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 12px;\n  padding: 12px 14px 12px;\n  margin: 0 0 12px;\n  color: var(--nb-fg);\n  font-size: 13px;\n  line-height: 1.35;\n}\n.head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); display: inline-flex; align-items: center; justify-content: center; }\n.logo::after { content: ""; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }\n.title { font-weight: 600; font-size: 14px; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }\n.tile { background: var(--nb-bg2); border-radius: 8px; padding: 7px 8px; min-width: 0; }\n.tile .v { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .k { color: var(--nb-fg2); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }\n.tile .s { color: var(--nb-fg2); font-size: 11px; }\n.tile.hot .v { color: #ea580c; }\n.tile.high .v { color: var(--nb-good); }\n.tile.low .v { color: var(--nb-fg2); }\n.row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }\n.bar { flex: 1; height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.lbl { color: var(--nb-fg2); font-size: 12px; }\n.link { color: var(--nb-accent); cursor: pointer; font-size: 12px; background: none; border: 0; padding: 0; font-family: inherit; }\n.checks { margin: 6px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 2px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; color: var(--nb-fg2); font-size: 11px; }\n.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }\n.tag { background: var(--nb-bg2); border-radius: 999px; padding: 2px 8px; font-size: 11px; cursor: pointer; border: 0; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.tag:hover { background: var(--nb-line); }\n.tag .rank { margin-left: 5px; font-size: 10px; color: var(--nb-fg2); font-weight: 600; }\n.tag .rank.top { color: var(--nb-good); }\n.tag .rank.none { color: var(--nb-fg2); opacity: .6; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }\n.btn:hover { background: var(--nb-bg2); }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.primary:hover { filter: brightness(1.1); }\n.muted { color: var(--nb-fg2); font-size: 12px; margin-top: 8px; }\n.small { font-size: 11px; color: var(--nb-fg2); }\n.hidden { display: none; }\n';
 
   // src/content/overlay.ts
   var HOST_ID = "nubit-overlay-host";
@@ -835,8 +838,17 @@
       (c) => `<li class="${c.ok ? "ok" : "no"}"><span class="ic">${c.ok ? "\u2713" : "\u2717"}</span><span>${escapeHtml(c.label)}${c.ok ? "" : `<span class="hint">${escapeHtml(c.hint)}</span>`}</span></li>`
     ).join("")}</ul>` : "";
     const tags = v.tags ?? [];
-    const tagsHtml = tags.length ? `<div class="tags">${tags.slice(0, 40).map((tag) => `<button class="tag" data-tag="${escapeHtml(tag)}" title="${t("copy")}">${escapeHtml(tag)}</button>`).join("")}${tags.length > 40 ? `<span class="small">+${tags.length - 40}</span>` : ""}</div>
-       <div class="row"><span class="small">${t("tags")}: ${tags.length}</span><button class="link" data-tag="*">${t("copy_all_tags")}</button></div>` : `<div class="muted">${t("no_tags")}</div>`;
+    const ranks = new Map((s.tagRanks ?? []).map((r) => [r.tag.toLowerCase(), r]));
+    const rankBadge = (tag) => {
+      const r = ranks.get(tag.toLowerCase());
+      if (!r) return "";
+      return r.rank ? `<b class="rank ${r.rank <= 3 ? "top" : ""}">#${r.rank}</b>` : `<b class="rank none">\u2014</b>`;
+    };
+    const tagsHtml = tags.length ? `<div class="tags">${tags.slice(0, 40).map((tag) => `<button class="tag" data-tag="${escapeHtml(tag)}" title="${t("copy")}">${escapeHtml(tag)}${rankBadge(tag)}</button>`).join("")}${tags.length > 40 ? `<span class="small">+${tags.length - 40}</span>` : ""}</div>
+       <div class="row"><span class="small">${t("tags")}: ${tags.length}</span><button class="link" data-tag="*">${t("copy_all_tags")}</button>
+         <button class="link" data-action="tagranks" ${s.tagRanksPending ? "disabled" : ""}>${s.tagRanksPending ? t("computing") : t("tag_ranks")}</button></div>
+       ${s.tagRanks?.length ? `<div class="small">${t("tag_ranks_hint")}</div>` : ""}` : `<div class="muted">${t("no_tags")}</div>`;
+    const chKw = s.channelKeywords?.length ? `<div class="small" style="margin-top:6px">${t("channel_tags")}: ${escapeHtml(s.channelKeywords.slice(0, 12).join(", "))}${s.channelKeywords.length > 12 ? ` +${s.channelKeywords.length - 12}` : ""}</div>` : "";
     const caps = v.captionTracks?.length ? `<div class="small">${t("captions")}: ${escapeHtml(
       v.captionTracks.slice(0, 6).map((c) => `${c.lang}${c.auto ? ` (${t("auto")})` : ""}`).join(", ")
     )}${v.captionTracks.length > 6 ? ` +${v.captionTracks.length - 6}` : ""}</div>` : "";
@@ -845,6 +857,7 @@
     <div class="grid">${tiles.join("")}</div>
     ${seo ? `<div class="row"><span class="lbl">${t("seo_score")}</span><div class="bar"><i style="width:${seo.score}%"></i></div><button class="link" data-toggle="checks">${showChecks ? t("hide_checks") : t("show_checks")}</button></div>${checks}` : ""}
     ${tagsHtml}
+    ${chKw}
     ${caps}
     <div class="actions">
       <button class="btn primary" data-action="analyze_video">${t("ai_analyze")}</button>
@@ -1012,7 +1025,7 @@
     const videoId = currentVideoId();
     if (!videoId) return;
     overlayState = {};
-    if (!overlay) overlay = createOverlay((a) => a === "chat" ? openPanel() : openPanel(a));
+    if (!overlay) overlay = createOverlay((a) => a === "chat" ? openPanel() : a === "tagranks" ? void checkTagRanks() : openPanel(a));
     overlay.update(overlayState);
     mountOverlay(token);
     let video;
@@ -1073,6 +1086,7 @@
         } else {
           channelViews = res.videos.filter((x) => x.videoId !== videoId).map((x) => x.views).filter((x) => x !== void 0);
           if (video.subscribers === void 0) video.subscribers = res.channel.subscribers;
+          overlayState.channelKeywords = res.channel.keywords;
         }
         refresh();
       }).catch(() => {
@@ -1086,6 +1100,19 @@
       applyDom();
       if (JSON.stringify([video.likes, video.comments, video.subscribers]) !== before) refresh();
       mountOverlay(token);
+    }
+  }
+  async function checkTagRanks() {
+    const v = overlayState.video;
+    if (!v?.tags?.length || overlayState.tagRanksPending) return;
+    overlayState.tagRanksPending = true;
+    overlay?.update(overlayState);
+    try {
+      const res = await chrome.runtime.sendMessage({ type: "tagRanks", videoId: v.videoId, tags: v.tags.slice(0, 8) });
+      if (Array.isArray(res) && overlayState.video?.videoId === v.videoId) overlayState.tagRanks = res;
+    } finally {
+      overlayState.tagRanksPending = false;
+      overlay?.update(overlayState);
     }
   }
   function mountOverlay(token) {

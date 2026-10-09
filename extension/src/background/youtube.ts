@@ -1,6 +1,6 @@
 // YouTube data access. Uses the YouTube Data API v3 when a key is configured,
 // otherwise parses the public page data (ytInitialData / ytInitialPlayerResponse).
-import type { ChannelData, ChannelStats, CommentItem, ListVideo, Settings, VideoData } from '../shared/types.ts';
+import type { ChannelData, ChannelStats, CommentItem, ListVideo, Settings, TagRank, VideoData } from '../shared/types.ts';
 import { ageHoursFromIso, extractVideoId, hasChapters, median, parseIsoDuration } from '../shared/metrics.ts';
 import {
   channelFromData,
@@ -211,6 +211,44 @@ export class YouTube {
     const data = extractJsonVar(html, 'ytInitialData');
     if (!data) throw new YouTubeError('Could not parse search results page');
     return searchResultsFromData(data).slice(0, maxResults);
+  }
+
+  /** Search through the public results page only (no API quota). */
+  async searchPage(query: string, maxResults = 20): Promise<ListVideo[]> {
+    const html = await this.fetchHtml(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
+    const data = extractJsonVar(html, 'ytInitialData');
+    if (!data) throw new YouTubeError('Could not parse search results page');
+    return searchResultsFromData(data).slice(0, maxResults);
+  }
+
+  /** Position of `videoId` in YouTube search for each tag (vidIQ's "ranked tags"); cached for the session. */
+  async tagRanks(videoId: string, tags: string[]): Promise<TagRank[]> {
+    const key = 'tagRanks';
+    const all = ((await chrome.storage.session.get(key))[key] ?? {}) as Record<string, TagRank & { t: number }>;
+    const out: TagRank[] = [];
+    for (const tag of tags.slice(0, 8)) {
+      const ck = `${videoId}|${tag.toLowerCase()}`;
+      const hit = all[ck];
+      if (hit && Date.now() - hit.t < 6 * 3600 * 1000) {
+        out.push({ tag, rank: hit.rank, checked: hit.checked });
+        continue;
+      }
+      try {
+        const res = await this.searchPage(tag, 20);
+        const idx = res.findIndex((v) => v.videoId === videoId);
+        const r: TagRank = { tag, rank: idx >= 0 ? idx + 1 : null, checked: res.length };
+        all[ck] = { ...r, t: Date.now() };
+        out.push(r);
+      } catch (err) {
+        out.push({ tag, rank: null, checked: 0 });
+        if (err instanceof YouTubeError && /consent|HTTP 429/.test(err.message)) break;
+      }
+      await new Promise((r) => setTimeout(r, 250));
+    }
+    const keys = Object.keys(all);
+    if (keys.length > 500) keys.sort((a, b) => all[a].t - all[b].t).slice(0, keys.length - 500).forEach((k) => delete all[k]);
+    await chrome.storage.session.set({ [key]: all });
+    return out;
   }
 
   // ---- channels ---------------------------------------------------------

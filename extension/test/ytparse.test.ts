@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  parseChannelKeywords,
   channelFromData,
   extractJsonVar,
   listVideosFromData,
@@ -200,4 +201,11 @@ test('transcriptFromJson3 groups segments into 30s buckets', () => {
     ],
   });
   assert.equal(t, '[0:00] Hello world again\n[0:35] later\n[1:01:40] hour');
+});
+
+
+test('parseChannelKeywords splits quoted and bare keywords', () => {
+  assert.deepEqual(parseChannelKeywords('"grow on youtube" seo "youtube tips" vlog'), ['grow on youtube', 'seo', 'youtube tips', 'vlog']);
+  const ch = channelFromData({ metadata: { channelMetadataRenderer: { title: 'X', externalId: 'UCx', keywords: '"a b" c' } } });
+  assert.deepEqual(ch.keywords, ['a b', 'c']);
 });

@@ -1,6 +1,6 @@
 // Options page: API keys, models, custom providers, display toggles, local tools (native host) and custom APIs.
 import type { CustomApi, CustomProvider, Lang, LocalTool, RuntimeMessage, Settings } from '../shared/types.ts';
-import { ANTHROPIC_MODELS, DEFAULT_SETTINGS, loadSettings, saveSettings } from '../shared/settings.ts';
+import { ANTHROPIC_MODELS, DEFAULT_SETTINGS, loadSettings, providerReady, saveSettings } from '../shared/settings.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -24,6 +24,11 @@ const TEXT: Record<string, Record<Lang, string>> = {
   subtitle: { ru: 'ИИ-аналитик YouTube. Работает на ваших ключах API.', en: 'AI YouTube analyst. Runs on your own API keys.' },
   'lbl-language': { ru: 'Язык', en: 'Language' },
   'h-ai': { ru: 'ИИ-модель', en: 'AI model' },
+  'step1-title': { ru: 'Шаг 1 из 1: подключите ИИ', en: 'Step 1 of 1: connect an AI' },
+  'step1-text': {
+    ru: 'Вставьте ключ Claude в поле ниже (console.anthropic.com → API Keys → Create key), нажмите «Проверить подключение», затем «Сохранить». Всё остальное на этой странице — по желанию. Потом откройте любое видео на YouTube.',
+    en: 'Paste your Claude key below (console.anthropic.com → API Keys → Create key), press "Test connection", then "Save". Everything else on this page is optional. Then open any YouTube video.',
+  },
   'lbl-provider': { ru: 'Провайдер', en: 'Provider' },
   'lbl-model-a': { ru: 'Модель', en: 'Model' },
   'lbl-model-o': { ru: 'Модель', en: 'Model' },
@@ -257,6 +262,7 @@ function fill(): void {
   $('ext-id').textContent = chrome.runtime.id;
   applyTexts(settings.language);
   showProvider();
+  $('step1').classList.toggle('hidden', providerReady(settings));
 }
 
 function renderTools(l: Lang): void {
@@ -383,6 +389,7 @@ function collect(): Settings {
 async function save(): Promise<void> {
   settings = collect();
   await saveSettings(settings);
+  $('step1').classList.toggle('hidden', providerReady(settings));
   const out = $('save-result');
   out.textContent = tr('Сохранено', 'Saved');
   out.className = 'result ok';

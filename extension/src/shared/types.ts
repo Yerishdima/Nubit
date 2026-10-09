@@ -166,6 +166,16 @@ export interface ChannelData {
   videoCount?: number;
   description?: string;
   url?: string;
+  /** Channel keywords set by the owner (vidIQ calls them "channel tags"). */
+  keywords?: string[];
+}
+
+export interface TagRank {
+  tag: string;
+  /** 1-based position of the video in YouTube search for this tag, or null if not in the top results. */
+  rank: number | null;
+  /** How many results were checked. */
+  checked: number;
 }
 
 export interface ChannelStats {
@@ -320,4 +330,5 @@ export type RuntimeMessage =
   | { type: 'getVideoTags'; videoIds: string[] }
   | { type: 'studioInsert'; field: 'title' | 'description' | 'tags'; value: string | string[]; mode?: 'replace' | 'append' }
   | { type: 'fetchImage'; url: string }
+  | { type: 'tagRanks'; videoId: string; tags: string[] }
   | { type: 'pageContextSummary'; tabId: number | null };

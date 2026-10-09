@@ -1,5 +1,5 @@
 // Isolated-world content script: orchestrates page detection, the watch overlay, badges and page context.
-import type { ChannelStats, PageContext, QuickActionId, RuntimeMessage, Settings, VideoData, VideoMetrics } from '../shared/types.ts';
+import type { ChannelStats, PageContext, QuickActionId, RuntimeMessage, Settings, TagRank, VideoData, VideoMetrics } from '../shared/types.ts';
 import { loadSettings, onSettingsChanged } from '../shared/settings.ts';
 import { setLang } from '../shared/i18n.ts';
 import { computeMetrics } from '../shared/metrics.ts';
@@ -78,7 +78,7 @@ async function watchFlow(token: number): Promise<void> {
   const videoId = currentVideoId();
   if (!videoId) return;
   overlayState = {};
-  if (!overlay) overlay = createOverlay((a) => (a === 'chat' ? openPanel() : openPanel(a)));
+  if (!overlay) overlay = createOverlay((a) => (a === 'chat' ? openPanel() : a === 'tagranks' ? void checkTagRanks() : openPanel(a)));
   overlay.update(overlayState);
   mountOverlay(token);
 
@@ -154,6 +154,7 @@ async function watchFlow(token: number): Promise<void> {
         } else {
           channelViews = res.videos.filter((x) => x.videoId !== videoId).map((x) => x.views).filter((x): x is number => x !== undefined);
           if (video!.subscribers === undefined) video!.subscribers = res.channel.subscribers;
+          overlayState.channelKeywords = res.channel.keywords;
         }
         refresh();
       })
@@ -170,6 +171,20 @@ async function watchFlow(token: number): Promise<void> {
     applyDom();
     if (JSON.stringify([video.likes, video.comments, video.subscribers]) !== before) refresh();
     mountOverlay(token);
+  }
+}
+
+async function checkTagRanks(): Promise<void> {
+  const v = overlayState.video;
+  if (!v?.tags?.length || overlayState.tagRanksPending) return;
+  overlayState.tagRanksPending = true;
+  overlay?.update(overlayState);
+  try {
+    const res = (await chrome.runtime.sendMessage({ type: 'tagRanks', videoId: v.videoId, tags: v.tags.slice(0, 8) } satisfies RuntimeMessage)) as TagRank[] | { error: string } | null;
+    if (Array.isArray(res) && overlayState.video?.videoId === v.videoId) overlayState.tagRanks = res;
+  } finally {
+    overlayState.tagRanksPending = false;
+    overlay?.update(overlayState);
   }
 }
 
