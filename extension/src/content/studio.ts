@@ -74,6 +74,18 @@ const L = {
     strengths: 'Сильные стороны',
     issues: 'Проблемы',
     textIdeas: 'Идеи текста',
+    tool_score: 'Optimize Score',
+    tool_thumb: 'Превью',
+    tool_compare: 'Конкуренты',
+    tool_magic: 'Magic Fill',
+    tool_titlescore: 'Название',
+    optimize: 'Optimize Score (0–100)',
+    optimize_hint: 'Веса как у vidIQ: название 48 %, превью 48 %, описание 2,5 %, теги 1 %. Превью учитывается после оценки «🖼 Оценить превью».',
+    desc_hint: 'Первые 150 символов видны в поиске — поставьте туда ключевой запрос и крючок; дальше структура, главы, ссылки, 3 хэштега.',
+    thumb_hint: 'Загрузите превью в поле «Значок», затем нажмите кнопку — модель оценит читаемость, контраст, текст, эмоцию и даст правки.',
+    compare_hint: 'ИИ найдёт топ‑видео по вашему запросу и скажет, насколько название выделится, что поправить и предложит альтернативы.',
+    magic_hint: 'Одна кнопка: ИИ заполнит название, описание и теги на основе черновика и спроса. Всё можно отредактировать.',
+    comp_need_kw: 'Сначала проверьте спрос по ключевому запросу (вкладка IQ).',
   },
   en: {
     title: 'Nubit · optimization',
@@ -130,6 +142,18 @@ const L = {
     strengths: 'Strengths',
     issues: 'Issues',
     textIdeas: 'Text ideas',
+    tool_score: 'Optimize Score',
+    tool_thumb: 'Thumbnail',
+    tool_compare: 'Competitors',
+    tool_magic: 'Magic Fill',
+    tool_titlescore: 'Title',
+    optimize: 'Optimize Score (0–100)',
+    optimize_hint: 'vidIQ-like weights: title 48 %, thumbnail 48 %, description 2.5 %, tags 1 %. The thumbnail counts after "🖼 Review thumbnail".',
+    desc_hint: 'The first 150 characters show in search — put the keyword and the hook there; then structure, chapters, links, 3 hashtags.',
+    thumb_hint: 'Upload a thumbnail in the Thumbnail field, then press the button — the model rates legibility, contrast, text, emotion and suggests fixes.',
+    compare_hint: 'The AI finds the top videos for your keyword and tells how much your title stands out, what to fix, and proposes alternatives.',
+    magic_hint: 'One click: the AI fills in the title, description and tags from the draft and demand data. Everything stays editable.',
+    comp_need_kw: 'Check demand for the focus keyword first (IQ tab).',
   },
 } as const;
 
@@ -166,7 +190,6 @@ let root: HTMLElement | null = null;
 let toastEl: HTMLElement | null = null;
 let port: chrome.runtime.Port | null = null;
 let kwInputFocused = false;
-let collapsed = false;
 const state: State = {
   draft: { title: '', description: '', tags: [] },
   focusKeyword: '',
@@ -319,86 +342,83 @@ function chip(text: string, action: string, extra = '', added = false): string {
   return `<button class="chip ${added ? 'added' : ''}" data-act="${action}" data-val="${escapeHtml(text)}" ${added ? 'disabled' : ''}>${escapeHtml(text)}${extra}</button>`;
 }
 
+type ToolId = 'score' | 'titles' | 'description' | 'thumbnail' | 'tags' | 'compare' | 'magic';
+
+const TOOLS: Array<{ id: ToolId; icon: string; label: Keys; action?: QuickActionId }> = [
+  { id: 'score', icon: 'IQ', label: 'tool_score' },
+  { id: 'titles', icon: 'T', label: 'titleSec', action: 'studio_titles' },
+  { id: 'description', icon: '≡', label: 'descSec', action: 'studio_description' },
+  { id: 'thumbnail', icon: '🖼', label: 'tool_thumb', action: 'studio_thumbnail' },
+  { id: 'tags', icon: '#', label: 'tagsSec', action: 'studio_tags' },
+  { id: 'compare', icon: '⚔', label: 'tool_compare', action: 'studio_compare' },
+  { id: 'magic', icon: '🪄', label: 'tool_magic', action: 'studio_magic_fill' },
+];
+
+let activeTool: ToolId | null = 'score';
+
+interface Scores {
+  title: number;
+  description: number;
+  tags: number;
+  thumbnail?: number;
+  optimize: number;
+  seo: ReturnType<typeof seoScore>;
+  titleChecks: ReturnType<typeof titleScore>;
+}
+
+/** Optimize score with vidIQ-like weights (title 48 %, thumbnail 48 %, description 2.5 %, tags 1 %); unknown parts are renormalized. */
+function computeScores(): Scores {
+  const d = state.draft;
+  const kw = state.focusKeyword;
+  const titleChecks = titleScore(d.title, kw, lang);
+  const seo = seoScore({ videoId: 'draft', url: '', title: d.title, description: d.description, tags: d.tags }, lang);
+  const desc = d.description;
+  const kwInFirst = kw ? desc.slice(0, 150).toLowerCase().includes(kw) : /\S/.test(desc.slice(0, 150));
+  const description = Math.min(100, Math.round(Math.min(desc.length, 300) / 300 * 60 + (kwInFirst ? 25 : 0) + (/#\p{L}/u.test(desc) ? 5 : 0) + (/https?:\/\//.test(desc) ? 5 : 0) + (/\n\s*\d{1,2}:\d{2}/.test(desc) ? 5 : 0)));
+  const kwInTags = kw ? d.tags.some((x) => x.toLowerCase().includes(kw)) : d.tags.length > 0;
+  const tags = Math.min(100, Math.round(Math.min(d.tags.length, 15) / 15 * 70 + (kwInTags ? 30 : 0)));
+  const th = state.ai.studio_thumbnail?.parsed?.score;
+  const thumbnail = typeof th === 'number' ? Math.max(0, Math.min(100, th)) : undefined;
+  const parts: Array<[number, number]> = [[titleChecks.score, 48], [description, 2.5], [tags, 1]];
+  if (thumbnail !== undefined) parts.push([thumbnail, 48]);
+  const wsum = parts.reduce((a, [, w]) => a + w, 0);
+  const optimize = d.title ? Math.round(parts.reduce((a, [v, w]) => a + v * w, 0) / wsum) : 0;
+  return { title: titleChecks.score, description, tags, thumbnail, optimize, seo, titleChecks };
+}
+
 function render(): void {
   if (!root || !host) return;
   host.setAttribute('data-theme', isDark() ? 'dark' : 'light');
-  host.setAttribute('data-collapsed', collapsed ? '1' : '0');
   const d = state.draft;
-  const kw = state.focusKeyword;
-  const ts = titleScore(d.title, kw, lang);
-  const seo = seoScore({ videoId: 'draft', url: '', title: d.title, description: d.description, tags: d.tags }, lang);
-  const existing = new Set(d.tags.map((x) => x.toLowerCase()));
+  const sc = computeScores();
   const ready = providerReady(settings);
-  const parts: string[] = [];
 
-  parts.push(`<div class="head"><span class="logo"></span><span class="title">${t('title')}</span>
-    ${d.title ? `<span class="pill ${pillClass(ts.score)}" title="${t('titleSec')}">${t('titleSec')} ${ts.score}</span><span class="pill ${pillClass(seo.score)}" title="SEO">SEO ${seo.score}</span>` : ''}
-    <button class="icon" data-act="chat" title="${t('chat')}">💬</button>
-    <button class="icon" data-act="collapse" title="${collapsed ? '▲' : '▼'}">${collapsed ? '▲' : '▼'}</button></div>`);
+  const toolbar = `<div class="toolbar">
+    <button class="tool logo-btn" title="Nubit">N</button>
+    ${TOOLS.map((tl) => {
+      const running = tl.action && state.running === tl.action;
+      if (tl.id === 'score') {
+        return `<button class="tool score ${pillClass(sc.optimize)} ${activeTool === 'score' ? 'active' : ''}" data-act="tool" data-val="score" title="${t('tool_score')}"><span>${d.title ? sc.optimize : '—'}</span><small>IQ</small></button>`;
+      }
+      return `<button class="tool ${activeTool === tl.id ? 'active' : ''}" data-act="tool" data-val="${tl.id}" title="${t(tl.label)}">${tl.icon}${running ? '<span class="dotb"></span>' : ''}</button>`;
+    }).join('')}
+    <div class="sep"></div>
+    <button class="tool" data-act="chat" title="${t('chat')}">💬</button>
+  </div>`;
 
-  const body: string[] = [];
-
-  // Keyword
-  const r = state.report && state.reportFor === kw ? state.report : undefined;
-  body.push(`<div class="sec"><h4>${t('kw')}</h4>
-    <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || '…')}" />
-      <button class="btn" data-act="check" ${!kw || state.reportLoading ? 'disabled' : ''}>${state.reportLoading ? t('checking') : t('check')}</button></div>
-    ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ''}
-    ${
-      r
-        ? `${meter(t('demand'), r.demand)}${meter(t('competition'), r.competition)}
-           <div class="muted">${r.exactInTitle}/${r.resultCount} ${t('exact')}${r.medianViews ? ` · ${formatCompact(r.medianViews)} views median` : ''}</div>
-           ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t('suggestions')}:</div><div class="chips">${r.suggestions.slice(0, 12).map((s) => chip(s, 'addtag', '', existing.has(s.toLowerCase()))).join('')}</div>` : ''}
-           <div class="row" style="margin-top:6px"><button class="btn small" data-act="comptags" ${state.compTagsLoading ? 'disabled' : ''}>${state.compTagsLoading ? t('checking') : t('loadTags')}</button>
-             ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t('addAll')} (≥2)</button>` : ''}</div>
-           ${state.compTags?.length ? `<div class="chips">${state.compTags.slice(0, 24).map((x) => chip(x.tag, 'addtag', ` <b>${x.n}</b>`, existing.has(x.tag.toLowerCase()))).join('')}</div>` : ''}`
-        : ''
-    }
-  </div>`);
-
-  // Title
-  const titleWords = d.title.split(/\s+/).filter(Boolean).length;
-  body.push(`<div class="sec"><h4>${t('titleSec')} <span class="muted">${d.title.length} ${t('chars')} · ${titleWords} ${t('words')}</span>${d.title ? `<span class="pill ${pillClass(ts.score)}">${ts.score}</span>` : ''}</h4>
-    ${
-      d.title
-        ? `<div class="row"><div class="bar"><i style="width:${ts.score}%"></i></div><button class="btn small" data-act="toggleTitle">${t('show')}</button></div>
-           ${state.showTitleChecks ? checksHtml(ts.checks) : ''}
-           <div class="preview"><div class="muted">${t('preview')}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + '…' : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split('\n').slice(0, 2).join('\n').slice(0, 150))}</div>` : ''}</div>`
-        : `<div class="muted">${t('noTitle')}</div>`
-    }
-  </div>`);
-
-  // Description + tags summary
-  const tpls = settings.tagTemplates ?? [];
-  body.push(`<div class="sec"><h4>${t('descSec')} <span class="muted">${d.description.length} ${t('chars')}</span> · ${t('tagsSec')} <span class="muted">${d.tags.length}</span><span class="pill ${pillClass(seo.score)}">SEO ${seo.score}</span></h4>
-    <div class="row"><div class="bar"><i style="width:${seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t('show')}</button></div>
-    ${state.showSeoChecks ? checksHtml(seo.checks) : ''}
-    <div class="row" style="margin-top:6px">
-      <select class="kw" id="tpl" title="${t('templates')}"><option value="">${t('templates')}…</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join('')}</select>
-      <button class="btn small" data-act="tpl-apply">${t('tpl_apply')}</button>
-      <button class="btn small" data-act="tpl-del" title="${t('tpl_del')}">✕</button>
-    </div>
-    ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t('tpl_save')}</button></div>` : ''}
-  </div>`);
-
-  // AI
-  const acts: Array<[QuickActionId, Keys]> = [
-    ['studio_magic_fill', 'gen_magic'],
-    ['studio_titles', 'gen_titles'],
-    ['studio_description', 'gen_description'],
-    ['studio_tags', 'gen_tags'],
-    ['studio_compare', 'gen_compare'],
-    ['studio_thumbnail', 'gen_thumb'],
-  ];
-  body.push(`<div class="sec"><h4>${t('ai')}</h4>
-    ${ready ? '' : `<div class="muted">${t('noKey')} <button class="btn small" data-act="settings">${t('openSettings')}</button></div>`}
-    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === 'studio_compare' || a === 'studio_thumbnail' ? '' : 'primary'}" data-act="ai" data-val="${a}" ${!ready || state.running ? 'disabled' : ''}>${t(k)}</button>`).join('')}
-      ${state.running ? `<button class="btn" data-act="stop">${t('stop')}</button>` : ''}</div>
-    ${acts.map(([a]) => resultHtml(a, state.ai[a], existing)).join('')}
-  </div>`);
-
-  parts.push(`<div class="body">${body.join('')}</div><div class="toast" id="toast"></div>`);
-  root.innerHTML = `<div class="panel">${parts.join('')}</div>`;
+  let panel = '';
+  if (activeTool) {
+    const tool = TOOLS.find((x) => x.id === activeTool)!;
+    const body = toolBody(activeTool, sc, ready);
+    panel = `<div class="panel">
+      <div class="head"><span class="title">${t(tool.label)}</span>
+        ${state.running ? `<button class="btn small" data-act="stop">${t('stop')}</button>` : ''}
+        <button class="icon" data-act="tool" data-val="${activeTool}" title="✕">✕</button></div>
+      <div class="body">${body}</div>
+      <div class="toast" id="toast"></div>
+    </div>`;
+  }
+  root.innerHTML = toolbar + panel;
   toastEl = root.querySelector('#toast');
   const kwInput = root.querySelector<HTMLInputElement>('#kw');
   if (kwInput) {
@@ -418,6 +438,133 @@ function render(): void {
       }
     });
   }
+  updateTitleBadge(sc);
+}
+
+function aiButton(action: QuickActionId, label: Keys, ready: boolean, primary = true): string {
+  return `<button class="btn ${primary ? 'primary' : ''}" data-act="ai" data-val="${action}" ${!ready || state.running ? 'disabled' : ''}>${t(label)}</button>`;
+}
+
+function noKeyHtml(ready: boolean): string {
+  return ready ? '' : `<div class="muted" style="margin-bottom:6px">${t('noKey')} <button class="btn small" data-act="settings">${t('openSettings')}</button></div>`;
+}
+
+function toolBody(tool: ToolId, sc: Scores, ready: boolean): string {
+  const d = state.draft;
+  const kw = state.focusKeyword;
+  const existing = new Set(d.tags.map((x) => x.toLowerCase()));
+  switch (tool) {
+    case 'score': {
+      const r = state.report && state.reportFor === kw ? state.report : undefined;
+      return `<div class="sec">
+        <div class="big ${pillClass(sc.optimize)}"><span class="n">${d.title ? sc.optimize : '—'}</span><span class="l">${t('optimize')}</span></div>
+        ${meter(t('titleSec'), d.title ? sc.title : undefined)}
+        ${meter(t('tool_thumb'), sc.thumbnail)}
+        ${meter(t('descSec'), d.description ? sc.description : undefined)}
+        ${meter(t('tagsSec'), d.tags.length ? sc.tags : undefined)}
+        <div class="muted" style="margin-top:4px">${t('optimize_hint')}</div>
+      </div>
+      <div class="sec"><h4>SEO <span class="pill ${pillClass(sc.seo.score)}">${sc.seo.score}</span></h4>
+        <div class="row"><div class="bar"><i style="width:${sc.seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t('show')}</button></div>
+        ${state.showSeoChecks ? checksHtml(sc.seo.checks) : ''}
+      </div>
+      <div class="sec"><h4>${t('kw')}</h4>
+        <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || '…')}" />
+          <button class="btn" data-act="check" ${!kw || state.reportLoading ? 'disabled' : ''}>${state.reportLoading ? t('checking') : t('check')}</button></div>
+        ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ''}
+        ${
+          r
+            ? `${meter(t('demand'), r.demand)}${meter(t('competition'), r.competition)}
+               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t('exact')}${r.medianViews ? ` · ${formatCompact(r.medianViews)} views median` : ''}</div>
+               ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t('suggestions')}:</div><div class="chips">${r.suggestions.slice(0, 12).map((x) => chip(x, 'addtag', '', existing.has(x.toLowerCase()))).join('')}</div>` : ''}`
+            : ''
+        }
+      </div>`;
+    }
+    case 'titles': {
+      const titleWords = d.title.split(/\s+/).filter(Boolean).length;
+      return `<div class="sec">
+        <div class="big ${pillClass(sc.title)}"><span class="n">${d.title ? sc.title : '—'}</span><span class="l">${d.title.length} ${t('chars')} · ${titleWords} ${t('words')}</span></div>
+        ${d.title ? `<div class="row"><div class="bar"><i style="width:${sc.title}%"></i></div><button class="btn small" data-act="toggleTitle">${t('show')}</button></div>${state.showTitleChecks ? checksHtml(sc.titleChecks.checks) : ''}
+          <div class="preview"><div class="muted">${t('preview')}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + '…' : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split('\n').slice(0, 2).join('\n').slice(0, 150))}</div>` : ''}</div>` : `<div class="muted">${t('noTitle')}</div>`}
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_titles', 'gen_titles', ready)}</div>${resultHtml('studio_titles', state.ai.studio_titles, existing)}</div>`;
+    }
+    case 'description':
+      return `<div class="sec">
+        <div class="big ${pillClass(sc.description)}"><span class="n">${d.description ? sc.description : '—'}</span><span class="l">${d.description.length} ${t('chars')}</span></div>
+        <div class="muted">${t('desc_hint')}</div>
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_description', 'gen_description', ready)}</div>${resultHtml('studio_description', state.ai.studio_description, existing)}</div>`;
+    case 'thumbnail':
+      return `<div class="sec"><div class="muted">${t('thumb_hint')}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_thumbnail', 'gen_thumb', ready)}</div>${resultHtml('studio_thumbnail', state.ai.studio_thumbnail, existing)}</div>`;
+    case 'tags': {
+      const tpls = settings.tagTemplates ?? [];
+      const r = state.report && state.reportFor === kw ? state.report : undefined;
+      return `<div class="sec">
+        <div class="big ${pillClass(sc.tags)}"><span class="n">${d.tags.length}</span><span class="l">${t('tagsCount')} · ${d.tags.join(',').length}/500 ${t('chars')}</span></div>
+        ${d.tags.length ? `<div class="chips">${d.tags.slice(0, 30).map((x) => `<span class="chip added">${escapeHtml(x)}</span>`).join('')}</div>` : ''}
+      </div>
+      <div class="sec"><h4>${t('templates')}</h4>
+        <div class="row">
+          <select class="kw" id="tpl"><option value="">${t('templates')}…</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join('')}</select>
+          <button class="btn small" data-act="tpl-apply">${t('tpl_apply')}</button>
+          <button class="btn small" data-act="tpl-del" title="${t('tpl_del')}">✕</button>
+        </div>
+        ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t('tpl_save')}</button></div>` : ''}
+      </div>
+      <div class="sec"><h4>${t('compTags')}</h4>
+        <div class="row"><button class="btn small" data-act="comptags" ${state.compTagsLoading || !r ? 'disabled' : ''}>${state.compTagsLoading ? t('checking') : t('loadTags')}</button>
+          ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t('addAll')} (≥2)</button>` : ''}</div>
+        ${!r ? `<div class="muted" style="margin-top:4px">${t('comp_need_kw')}</div>` : ''}
+        ${state.compTags?.length ? `<div class="chips">${state.compTags.slice(0, 24).map((x) => chip(x.tag, 'addtag', ` <b>${x.n}</b>`, existing.has(x.tag.toLowerCase()))).join('')}</div>` : ''}
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_tags', 'gen_tags', ready)}</div>${resultHtml('studio_tags', state.ai.studio_tags, existing)}</div>`;
+    }
+    case 'compare':
+      return `<div class="sec"><div class="muted">${t('compare_hint')}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_compare', 'gen_compare', ready)}</div>${resultHtml('studio_compare', state.ai.studio_compare, existing)}</div>`;
+    case 'magic':
+      return `<div class="sec"><div class="muted">${t('magic_hint')}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton('studio_magic_fill', 'gen_magic', ready)}</div>${resultHtml('studio_magic_fill', state.ai.studio_magic_fill, existing)}</div>`;
+  }
+}
+
+// ---- title score badge inside the Studio title field (like vidIQ's Title Score) ----
+
+let badgeStyleInjected = false;
+
+function updateTitleBadge(sc: Scores): void {
+  const editable = q(SEL.title);
+  if (!editable) {
+    document.getElementById('nubit-title-score')?.remove();
+    return;
+  }
+  const container = (editable.closest('#title-textarea') as HTMLElement | null) ?? editable.parentElement;
+  if (!container) return;
+  if (!badgeStyleInjected) {
+    const st = document.createElement('style');
+    st.textContent = `#nubit-title-score{position:absolute;right:10px;top:-11px;z-index:5;font:600 11px/1 Roboto,Arial,sans-serif;padding:4px 8px;border-radius:999px;background:#eee;color:#444;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+#nubit-title-score.good{background:#16a34a;color:#fff}#nubit-title-score.warn{background:#f59e0b;color:#fff}#nubit-title-score.bad{background:#dc2626;color:#fff}`;
+    document.documentElement.appendChild(st);
+    badgeStyleInjected = true;
+  }
+  let badge = document.getElementById('nubit-title-score');
+  if (!badge || badge.parentElement !== container) {
+    badge?.remove();
+    badge = document.createElement('div');
+    badge.id = 'nubit-title-score';
+    badge.addEventListener('click', () => {
+      activeTool = 'titles';
+      render();
+    });
+    if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+    container.appendChild(badge);
+  }
+  const score = state.draft.title ? sc.title : undefined;
+  badge.className = score === undefined ? '' : score > 80 ? 'good' : score > 40 ? 'warn' : 'bad';
+  badge.textContent = `${t('tool_titlescore')} ${score === undefined ? '—' : score}`;
 }
 
 function resultHtml(action: QuickActionId, r: AiResult | undefined, existing: Set<string>): string {
@@ -546,6 +693,8 @@ function ensurePort(): chrome.runtime.Port {
 
 function runAi(action: QuickActionId, images?: ImageAttachment[]): void {
   if (state.running) return;
+  const tool = TOOLS.find((x) => x.action === action);
+  if (tool) activeTool = tool.id;
   state.ai[action] = { status: 'running', text: '' };
   state.running = action;
   render();
@@ -677,9 +826,9 @@ async function onClick(e: Event): Promise<void> {
   if (!el) return;
   const val = el.dataset.val ?? '';
   switch (el.dataset.act) {
-    case 'collapse':
-      collapsed = !collapsed;
-      chrome.storage.local.set({ studioCollapsed: collapsed }).catch(() => undefined);
+    case 'tool':
+      activeTool = activeTool === (val as ToolId) ? null : (val as ToolId);
+      chrome.storage.local.set({ studioTool: activeTool }).catch(() => undefined);
       render();
       break;
     case 'chat':
@@ -767,6 +916,7 @@ function refreshDraft(): void {
   const d = readDraft();
   if (!d) {
     if (host?.isConnected) host.remove();
+    document.getElementById('nubit-title-score')?.remove();
     return;
   }
   if (!host?.isConnected) mount();
@@ -798,7 +948,8 @@ async function init(): Promise<void> {
   settings = await loadSettings();
   lang = settings.language;
   setLang(lang);
-  collapsed = !!(await chrome.storage.local.get('studioCollapsed')).studioCollapsed;
+  const savedTool = (await chrome.storage.local.get('studioTool')).studioTool;
+  if (savedTool === null || typeof savedTool === 'string') activeTool = savedTool as ToolId | null;
   onSettingsChanged((s) => {
     settings = s;
     lang = s.language;

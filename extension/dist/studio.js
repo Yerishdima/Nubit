@@ -272,7 +272,7 @@
   }
 
   // src/content/studio.css
-  var studio_default = ':host {\n  all: initial;\n  position: fixed;\n  right: 16px;\n  bottom: 16px;\n  z-index: 2147483000;\n  width: 360px;\n  max-height: calc(100vh - 32px);\n  display: block;\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  --nb-bg: #fff;\n  --nb-bg2: #f3f4f6;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n:host([data-collapsed="1"]) .body { display: none; }\n:host([data-collapsed="1"]) { width: auto; }\n* { box-sizing: border-box; }\n.panel {\n  background: var(--nb-bg);\n  color: var(--nb-fg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 10px 30px rgba(0,0,0,.18);\n  font-size: 13px;\n  line-height: 1.4;\n  display: flex;\n  flex-direction: column;\n  max-height: calc(100vh - 32px);\n}\n.head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--nb-line); cursor: default; }\n.logo { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); position: relative; flex: none; }\n.logo::after { content: ""; position: absolute; left: 8px; top: 6px; border-left: 8px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }\n.title { font-weight: 600; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); white-space: nowrap; }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.icon { border: 0; background: none; color: var(--nb-fg2); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }\n.icon:hover { background: var(--nb-bg2); color: var(--nb-fg); }\n.body { overflow-y: auto; padding: 10px 12px 12px; }\n.sec { margin-bottom: 12px; }\n.sec h4 { margin: 0 0 6px; font-size: 12px; color: var(--nb-fg2); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }\n.sec h4 .pill { margin-left: auto; }\n.row { display: flex; align-items: center; gap: 6px; }\ninput.kw { flex: 1; border: 1px solid var(--nb-line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--nb-bg); color: var(--nb-fg); min-width: 0; }\ninput.kw:focus { outline: 2px solid var(--nb-accent); outline-offset: -1px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }\n.btn:hover { background: var(--nb-bg2); }\n.btn:disabled { opacity: .5; cursor: default; }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.small { padding: 2px 8px; font-size: 11px; }\n.bar { height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; flex: 1; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.meter { display: grid; grid-template-columns: 90px 1fr 36px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }\n.meter .v { text-align: right; font-weight: 600; }\n.checks { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 1px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; font-size: 11px; color: var(--nb-fg2); }\n.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }\n.chip { background: var(--nb-bg2); border: 0; border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.chip:hover { background: var(--nb-line); }\n.chip.added { opacity: .5; cursor: default; }\n.chip b { font-weight: 600; color: var(--nb-fg2); }\n.muted { color: var(--nb-fg2); font-size: 12px; }\n.preview { background: var(--nb-bg2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }\n.preview .pt { color: #065fd4; font-size: 13px; font-weight: 500; }\n:host([data-theme="dark"]) .preview .pt { color: #3ea6ff; }\n.preview .pd { color: var(--nb-fg2); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }\n.result { border: 1px solid var(--nb-line); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }\n.result .status { font-size: 12px; color: var(--nb-fg2); display: flex; align-items: center; gap: 6px; }\n.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; flex: none; }\n@keyframes blink { 50% { opacity: .2; } }\n.item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--nb-line); }\n.item:first-of-type { border-top: 0; }\n.item .t { flex: 1; min-width: 0; }\n.item .t .a { color: var(--nb-fg2); font-size: 11px; }\n.item .t .n { color: var(--nb-fg2); font-size: 11px; }\npre.desc { white-space: pre-wrap; font: inherit; margin: 6px 0; max-height: 220px; overflow-y: auto; background: var(--nb-bg2); border-radius: 8px; padding: 8px; }\ntable.cmp { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }\ntable.cmp td { padding: 3px 4px; border-top: 1px solid var(--nb-line); vertical-align: top; }\ntable.cmp td.num { text-align: right; white-space: nowrap; color: var(--nb-fg2); }\n.err { color: var(--nb-bad); font-size: 12px; }\n.toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--nb-fg); color: var(--nb-bg); padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }\n.toast.show { opacity: .95; }\nol.fixes { margin: 4px 0; padding-left: 18px; }\n';
+  var studio_default = ':host {\n  all: initial;\n  position: fixed;\n  left: 12px;\n  top: 96px;\n  z-index: 2147483000;\n  display: flex;\n  align-items: flex-start;\n  gap: 8px;\n  max-height: calc(100vh - 110px);\n  font-family: "Roboto", "YouTube Sans", Arial, sans-serif;\n  --nb-bg: #fff;\n  --nb-bg2: #f3f4f6;\n  --nb-fg: #0f0f0f;\n  --nb-fg2: #606060;\n  --nb-line: #e5e5e5;\n  --nb-accent: #4f46e5;\n  --nb-accent2: #8b5cf6;\n  --nb-good: #16a34a;\n  --nb-warn: #d97706;\n  --nb-bad: #dc2626;\n}\n:host([data-theme="dark"]) {\n  --nb-bg: #212121;\n  --nb-bg2: #2d2d2d;\n  --nb-fg: #f1f1f1;\n  --nb-fg2: #aaa;\n  --nb-line: #3a3a3a;\n}\n* { box-sizing: border-box; }\n\n/* vertical toolbar (vidIQ-style) */\n.toolbar {\n  display: flex;\n  flex-direction: column;\n  gap: 4px;\n  padding: 6px;\n  background: var(--nb-bg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 8px 24px rgba(0,0,0,.18);\n}\n.tool {\n  width: 40px;\n  height: 40px;\n  border: 0;\n  border-radius: 10px;\n  background: transparent;\n  color: var(--nb-fg);\n  cursor: pointer;\n  font-size: 18px;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  position: relative;\n  font-family: inherit;\n}\n.tool:hover { background: var(--nb-bg2); }\n.tool.active { background: var(--nb-accent); color: #fff; }\n.tool.score { font-size: 12px; font-weight: 700; flex-direction: column; line-height: 1; gap: 2px; }\n.tool.score small { font-size: 9px; font-weight: 500; opacity: .8; }\n.tool.score.good { color: var(--nb-good); }\n.tool.score.warn { color: var(--nb-warn); }\n.tool.score.bad { color: var(--nb-bad); }\n.tool.score.active { color: #fff; }\n.tool .dotb { position: absolute; top: 5px; right: 5px; width: 7px; height: 7px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; }\n.tool.logo-btn { background: linear-gradient(135deg, var(--nb-accent), var(--nb-accent2)); color: #fff; font-weight: 700; font-size: 13px; cursor: default; }\n.sep { height: 1px; background: var(--nb-line); margin: 2px 4px; }\n\n/* tool panel */\n.panel {\n  width: 370px;\n  max-height: calc(100vh - 110px);\n  background: var(--nb-bg);\n  color: var(--nb-fg);\n  border: 1px solid var(--nb-line);\n  border-radius: 14px;\n  box-shadow: 0 10px 30px rgba(0,0,0,.18);\n  font-size: 13px;\n  line-height: 1.4;\n  display: flex;\n  flex-direction: column;\n  position: relative;\n}\n.head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--nb-line); }\n.head .title { font-weight: 600; flex: 1; }\n.pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--nb-bg2); color: var(--nb-fg2); white-space: nowrap; }\n.pill.good { background: rgba(22,163,74,.15); color: var(--nb-good); }\n.pill.warn { background: rgba(217,119,6,.15); color: var(--nb-warn); }\n.pill.bad { background: rgba(220,38,38,.15); color: var(--nb-bad); }\n.icon { border: 0; background: none; color: var(--nb-fg2); cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 6px; font-family: inherit; }\n.icon:hover { background: var(--nb-bg2); color: var(--nb-fg); }\n.body { overflow-y: auto; padding: 10px 12px 12px; }\n.sec { margin-bottom: 12px; }\n.sec h4 { margin: 0 0 6px; font-size: 12px; color: var(--nb-fg2); text-transform: uppercase; letter-spacing: .04em; display: flex; align-items: center; gap: 6px; }\n.sec h4 .pill { margin-left: auto; }\n.row { display: flex; align-items: center; gap: 6px; }\ninput.kw, select.kw { flex: 1; border: 1px solid var(--nb-line); border-radius: 8px; padding: 6px 8px; font: inherit; background: var(--nb-bg); color: var(--nb-fg); min-width: 0; }\ninput.kw:focus { outline: 2px solid var(--nb-accent); outline-offset: -1px; }\n.btn { border: 1px solid var(--nb-line); background: var(--nb-bg); color: var(--nb-fg); border-radius: 999px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-family: inherit; white-space: nowrap; }\n.btn:hover { background: var(--nb-bg2); }\n.btn:disabled { opacity: .5; cursor: default; }\n.btn.primary { background: var(--nb-accent); border-color: var(--nb-accent); color: #fff; }\n.btn.small { padding: 2px 8px; font-size: 11px; }\n.bar { height: 6px; background: var(--nb-bg2); border-radius: 3px; overflow: hidden; flex: 1; }\n.bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--nb-accent), var(--nb-accent2)); }\n.meter { display: grid; grid-template-columns: 95px 1fr 36px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }\n.meter .v { text-align: right; font-weight: 600; }\n.big { display: flex; align-items: baseline; gap: 8px; margin: 2px 0 8px; }\n.big .n { font-size: 34px; font-weight: 700; line-height: 1; }\n.big.good .n { color: var(--nb-good); }\n.big.warn .n { color: var(--nb-warn); }\n.big.bad .n { color: var(--nb-bad); }\n.big .l { color: var(--nb-fg2); font-size: 12px; }\n.checks { margin: 4px 0 0; padding: 0; list-style: none; font-size: 12px; }\n.checks li { display: flex; gap: 6px; padding: 1px 0; color: var(--nb-fg2); }\n.checks li.ok { color: var(--nb-fg); }\n.checks li .ic { width: 14px; flex: none; }\n.checks li.ok .ic { color: var(--nb-good); }\n.checks li.no .ic { color: var(--nb-bad); }\n.checks li .hint { display: block; font-size: 11px; color: var(--nb-fg2); }\n.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }\n.chip { background: var(--nb-bg2); border: 0; border-radius: 999px; padding: 2px 9px; font-size: 11px; cursor: pointer; color: var(--nb-fg); font-family: inherit; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }\n.chip:hover { background: var(--nb-line); }\n.chip.added { opacity: .5; cursor: default; }\n.chip b { font-weight: 600; color: var(--nb-fg2); }\n.muted { color: var(--nb-fg2); font-size: 12px; }\n.preview { background: var(--nb-bg2); border-radius: 8px; padding: 8px 10px; margin-top: 6px; }\n.preview .pt { color: #065fd4; font-size: 13px; font-weight: 500; }\n:host([data-theme="dark"]) .preview .pt { color: #3ea6ff; }\n.preview .pd { color: var(--nb-fg2); font-size: 11px; margin-top: 2px; white-space: pre-wrap; }\n.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }\n.result { border: 1px solid var(--nb-line); border-radius: 10px; padding: 8px 10px; margin-top: 8px; }\n.result .status { font-size: 12px; color: var(--nb-fg2); display: flex; align-items: center; gap: 6px; }\n.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--nb-accent); animation: blink 1s infinite; flex: none; }\n@keyframes blink { 50% { opacity: .2; } }\n.item { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--nb-line); }\n.item:first-of-type { border-top: 0; }\n.item .t { flex: 1; min-width: 0; }\n.item .t .a { color: var(--nb-fg2); font-size: 11px; }\n.item .t .n { color: var(--nb-fg2); font-size: 11px; }\npre.desc { white-space: pre-wrap; font: inherit; margin: 6px 0; max-height: 220px; overflow-y: auto; background: var(--nb-bg2); border-radius: 8px; padding: 8px; }\ntable.cmp { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }\ntable.cmp td { padding: 3px 4px; border-top: 1px solid var(--nb-line); vertical-align: top; }\ntable.cmp td.num { text-align: right; white-space: nowrap; color: var(--nb-fg2); }\n.err { color: var(--nb-bad); font-size: 12px; }\n.toast { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--nb-fg); color: var(--nb-bg); padding: 6px 10px; border-radius: 8px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }\n.toast.show { opacity: .95; }\nol.fixes { margin: 4px 0; padding-left: 18px; }\n';
 
   // src/content/studio.ts
   var SEL = {
@@ -336,7 +336,19 @@
       thumbText: "\u0422\u0435\u043A\u0441\u0442 \u043D\u0430 \u043F\u0440\u0435\u0432\u044C\u044E",
       strengths: "\u0421\u0438\u043B\u044C\u043D\u044B\u0435 \u0441\u0442\u043E\u0440\u043E\u043D\u044B",
       issues: "\u041F\u0440\u043E\u0431\u043B\u0435\u043C\u044B",
-      textIdeas: "\u0418\u0434\u0435\u0438 \u0442\u0435\u043A\u0441\u0442\u0430"
+      textIdeas: "\u0418\u0434\u0435\u0438 \u0442\u0435\u043A\u0441\u0442\u0430",
+      tool_score: "Optimize Score",
+      tool_thumb: "\u041F\u0440\u0435\u0432\u044C\u044E",
+      tool_compare: "\u041A\u043E\u043D\u043A\u0443\u0440\u0435\u043D\u0442\u044B",
+      tool_magic: "Magic Fill",
+      tool_titlescore: "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435",
+      optimize: "Optimize Score (0\u2013100)",
+      optimize_hint: "\u0412\u0435\u0441\u0430 \u043A\u0430\u043A \u0443 vidIQ: \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 48 %, \u043F\u0440\u0435\u0432\u044C\u044E 48 %, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 2,5 %, \u0442\u0435\u0433\u0438 1 %. \u041F\u0440\u0435\u0432\u044C\u044E \u0443\u0447\u0438\u0442\u044B\u0432\u0430\u0435\u0442\u0441\u044F \u043F\u043E\u0441\u043B\u0435 \u043E\u0446\u0435\u043D\u043A\u0438 \xAB\u{1F5BC} \u041E\u0446\u0435\u043D\u0438\u0442\u044C \u043F\u0440\u0435\u0432\u044C\u044E\xBB.",
+      desc_hint: "\u041F\u0435\u0440\u0432\u044B\u0435 150 \u0441\u0438\u043C\u0432\u043E\u043B\u043E\u0432 \u0432\u0438\u0434\u043D\u044B \u0432 \u043F\u043E\u0438\u0441\u043A\u0435 \u2014 \u043F\u043E\u0441\u0442\u0430\u0432\u044C\u0442\u0435 \u0442\u0443\u0434\u0430 \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u0439 \u0437\u0430\u043F\u0440\u043E\u0441 \u0438 \u043A\u0440\u044E\u0447\u043E\u043A; \u0434\u0430\u043B\u044C\u0448\u0435 \u0441\u0442\u0440\u0443\u043A\u0442\u0443\u0440\u0430, \u0433\u043B\u0430\u0432\u044B, \u0441\u0441\u044B\u043B\u043A\u0438, 3 \u0445\u044D\u0448\u0442\u0435\u0433\u0430.",
+      thumb_hint: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u043F\u0440\u0435\u0432\u044C\u044E \u0432 \u043F\u043E\u043B\u0435 \xAB\u0417\u043D\u0430\u0447\u043E\u043A\xBB, \u0437\u0430\u0442\u0435\u043C \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \u043A\u043D\u043E\u043F\u043A\u0443 \u2014 \u043C\u043E\u0434\u0435\u043B\u044C \u043E\u0446\u0435\u043D\u0438\u0442 \u0447\u0438\u0442\u0430\u0435\u043C\u043E\u0441\u0442\u044C, \u043A\u043E\u043D\u0442\u0440\u0430\u0441\u0442, \u0442\u0435\u043A\u0441\u0442, \u044D\u043C\u043E\u0446\u0438\u044E \u0438 \u0434\u0430\u0441\u0442 \u043F\u0440\u0430\u0432\u043A\u0438.",
+      compare_hint: "\u0418\u0418 \u043D\u0430\u0439\u0434\u0451\u0442 \u0442\u043E\u043F\u2011\u0432\u0438\u0434\u0435\u043E \u043F\u043E \u0432\u0430\u0448\u0435\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 \u0438 \u0441\u043A\u0430\u0436\u0435\u0442, \u043D\u0430\u0441\u043A\u043E\u043B\u044C\u043A\u043E \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0432\u044B\u0434\u0435\u043B\u0438\u0442\u0441\u044F, \u0447\u0442\u043E \u043F\u043E\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0438 \u043F\u0440\u0435\u0434\u043B\u043E\u0436\u0438\u0442 \u0430\u043B\u044C\u0442\u0435\u0440\u043D\u0430\u0442\u0438\u0432\u044B.",
+      magic_hint: "\u041E\u0434\u043D\u0430 \u043A\u043D\u043E\u043F\u043A\u0430: \u0418\u0418 \u0437\u0430\u043F\u043E\u043B\u043D\u0438\u0442 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435, \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0438 \u0442\u0435\u0433\u0438 \u043D\u0430 \u043E\u0441\u043D\u043E\u0432\u0435 \u0447\u0435\u0440\u043D\u043E\u0432\u0438\u043A\u0430 \u0438 \u0441\u043F\u0440\u043E\u0441\u0430. \u0412\u0441\u0451 \u043C\u043E\u0436\u043D\u043E \u043E\u0442\u0440\u0435\u0434\u0430\u043A\u0442\u0438\u0440\u043E\u0432\u0430\u0442\u044C.",
+      comp_need_kw: "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043F\u0440\u043E\u0432\u0435\u0440\u044C\u0442\u0435 \u0441\u043F\u0440\u043E\u0441 \u043F\u043E \u043A\u043B\u044E\u0447\u0435\u0432\u043E\u043C\u0443 \u0437\u0430\u043F\u0440\u043E\u0441\u0443 (\u0432\u043A\u043B\u0430\u0434\u043A\u0430 IQ)."
     },
     en: {
       title: "Nubit \xB7 optimization",
@@ -392,7 +404,19 @@
       thumbText: "Text on thumbnail",
       strengths: "Strengths",
       issues: "Issues",
-      textIdeas: "Text ideas"
+      textIdeas: "Text ideas",
+      tool_score: "Optimize Score",
+      tool_thumb: "Thumbnail",
+      tool_compare: "Competitors",
+      tool_magic: "Magic Fill",
+      tool_titlescore: "Title",
+      optimize: "Optimize Score (0\u2013100)",
+      optimize_hint: 'vidIQ-like weights: title 48 %, thumbnail 48 %, description 2.5 %, tags 1 %. The thumbnail counts after "\u{1F5BC} Review thumbnail".',
+      desc_hint: "The first 150 characters show in search \u2014 put the keyword and the hook there; then structure, chapters, links, 3 hashtags.",
+      thumb_hint: "Upload a thumbnail in the Thumbnail field, then press the button \u2014 the model rates legibility, contrast, text, emotion and suggests fixes.",
+      compare_hint: "The AI finds the top videos for your keyword and tells how much your title stands out, what to fix, and proposes alternatives.",
+      magic_hint: "One click: the AI fills in the title, description and tags from the draft and demand data. Everything stays editable.",
+      comp_need_kw: "Check demand for the focus keyword first (IQ tab)."
     }
   };
   var settings;
@@ -402,7 +426,6 @@
   var toastEl = null;
   var port = null;
   var kwInputFocused = false;
-  var collapsed = false;
   var state = {
     draft: { title: "", description: "", tags: [] },
     focusKeyword: "",
@@ -534,67 +557,65 @@ ${text}` : text);
   function chip(text, action, extra = "", added = false) {
     return `<button class="chip ${added ? "added" : ""}" data-act="${action}" data-val="${escapeHtml(text)}" ${added ? "disabled" : ""}>${escapeHtml(text)}${extra}</button>`;
   }
+  var TOOLS = [
+    { id: "score", icon: "IQ", label: "tool_score" },
+    { id: "titles", icon: "T", label: "titleSec", action: "studio_titles" },
+    { id: "description", icon: "\u2261", label: "descSec", action: "studio_description" },
+    { id: "thumbnail", icon: "\u{1F5BC}", label: "tool_thumb", action: "studio_thumbnail" },
+    { id: "tags", icon: "#", label: "tagsSec", action: "studio_tags" },
+    { id: "compare", icon: "\u2694", label: "tool_compare", action: "studio_compare" },
+    { id: "magic", icon: "\u{1FA84}", label: "tool_magic", action: "studio_magic_fill" }
+  ];
+  var activeTool = "score";
+  function computeScores() {
+    const d = state.draft;
+    const kw = state.focusKeyword;
+    const titleChecks = titleScore(d.title, kw, lang2);
+    const seo = seoScore({ videoId: "draft", url: "", title: d.title, description: d.description, tags: d.tags }, lang2);
+    const desc = d.description;
+    const kwInFirst = kw ? desc.slice(0, 150).toLowerCase().includes(kw) : /\S/.test(desc.slice(0, 150));
+    const description = Math.min(100, Math.round(Math.min(desc.length, 300) / 300 * 60 + (kwInFirst ? 25 : 0) + (new RegExp("#\\p{L}", "u").test(desc) ? 5 : 0) + (/https?:\/\//.test(desc) ? 5 : 0) + (/\n\s*\d{1,2}:\d{2}/.test(desc) ? 5 : 0)));
+    const kwInTags = kw ? d.tags.some((x) => x.toLowerCase().includes(kw)) : d.tags.length > 0;
+    const tags = Math.min(100, Math.round(Math.min(d.tags.length, 15) / 15 * 70 + (kwInTags ? 30 : 0)));
+    const th = state.ai.studio_thumbnail?.parsed?.score;
+    const thumbnail = typeof th === "number" ? Math.max(0, Math.min(100, th)) : void 0;
+    const parts = [[titleChecks.score, 48], [description, 2.5], [tags, 1]];
+    if (thumbnail !== void 0) parts.push([thumbnail, 48]);
+    const wsum = parts.reduce((a, [, w]) => a + w, 0);
+    const optimize = d.title ? Math.round(parts.reduce((a, [v, w]) => a + v * w, 0) / wsum) : 0;
+    return { title: titleChecks.score, description, tags, thumbnail, optimize, seo, titleChecks };
+  }
   function render() {
     if (!root || !host) return;
     host.setAttribute("data-theme", isDark() ? "dark" : "light");
-    host.setAttribute("data-collapsed", collapsed ? "1" : "0");
     const d = state.draft;
-    const kw = state.focusKeyword;
-    const ts = titleScore(d.title, kw, lang2);
-    const seo = seoScore({ videoId: "draft", url: "", title: d.title, description: d.description, tags: d.tags }, lang2);
-    const existing = new Set(d.tags.map((x) => x.toLowerCase()));
+    const sc = computeScores();
     const ready = providerReady(settings);
-    const parts = [];
-    parts.push(`<div class="head"><span class="logo"></span><span class="title">${t("title")}</span>
-    ${d.title ? `<span class="pill ${pillClass(ts.score)}" title="${t("titleSec")}">${t("titleSec")} ${ts.score}</span><span class="pill ${pillClass(seo.score)}" title="SEO">SEO ${seo.score}</span>` : ""}
-    <button class="icon" data-act="chat" title="${t("chat")}">\u{1F4AC}</button>
-    <button class="icon" data-act="collapse" title="${collapsed ? "\u25B2" : "\u25BC"}">${collapsed ? "\u25B2" : "\u25BC"}</button></div>`);
-    const body = [];
-    const r = state.report && state.reportFor === kw ? state.report : void 0;
-    body.push(`<div class="sec"><h4>${t("kw")}</h4>
-    <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || "\u2026")}" />
-      <button class="btn" data-act="check" ${!kw || state.reportLoading ? "disabled" : ""}>${state.reportLoading ? t("checking") : t("check")}</button></div>
-    ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ""}
-    ${r ? `${meter(t("demand"), r.demand)}${meter(t("competition"), r.competition)}
-           <div class="muted">${r.exactInTitle}/${r.resultCount} ${t("exact")}${r.medianViews ? ` \xB7 ${formatCompact(r.medianViews)} views median` : ""}</div>
-           ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t("suggestions")}:</div><div class="chips">${r.suggestions.slice(0, 12).map((s) => chip(s, "addtag", "", existing.has(s.toLowerCase()))).join("")}</div>` : ""}
-           <div class="row" style="margin-top:6px"><button class="btn small" data-act="comptags" ${state.compTagsLoading ? "disabled" : ""}>${state.compTagsLoading ? t("checking") : t("loadTags")}</button>
-             ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t("addAll")} (\u22652)</button>` : ""}</div>
-           ${state.compTags?.length ? `<div class="chips">${state.compTags.slice(0, 24).map((x) => chip(x.tag, "addtag", ` <b>${x.n}</b>`, existing.has(x.tag.toLowerCase()))).join("")}</div>` : ""}` : ""}
-  </div>`);
-    const titleWords = d.title.split(/\s+/).filter(Boolean).length;
-    body.push(`<div class="sec"><h4>${t("titleSec")} <span class="muted">${d.title.length} ${t("chars")} \xB7 ${titleWords} ${t("words")}</span>${d.title ? `<span class="pill ${pillClass(ts.score)}">${ts.score}</span>` : ""}</h4>
-    ${d.title ? `<div class="row"><div class="bar"><i style="width:${ts.score}%"></i></div><button class="btn small" data-act="toggleTitle">${t("show")}</button></div>
-           ${state.showTitleChecks ? checksHtml(ts.checks) : ""}
-           <div class="preview"><div class="muted">${t("preview")}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + "\u2026" : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split("\n").slice(0, 2).join("\n").slice(0, 150))}</div>` : ""}</div>` : `<div class="muted">${t("noTitle")}</div>`}
-  </div>`);
-    const tpls = settings.tagTemplates ?? [];
-    body.push(`<div class="sec"><h4>${t("descSec")} <span class="muted">${d.description.length} ${t("chars")}</span> \xB7 ${t("tagsSec")} <span class="muted">${d.tags.length}</span><span class="pill ${pillClass(seo.score)}">SEO ${seo.score}</span></h4>
-    <div class="row"><div class="bar"><i style="width:${seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t("show")}</button></div>
-    ${state.showSeoChecks ? checksHtml(seo.checks) : ""}
-    <div class="row" style="margin-top:6px">
-      <select class="kw" id="tpl" title="${t("templates")}"><option value="">${t("templates")}\u2026</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join("")}</select>
-      <button class="btn small" data-act="tpl-apply">${t("tpl_apply")}</button>
-      <button class="btn small" data-act="tpl-del" title="${t("tpl_del")}">\u2715</button>
-    </div>
-    ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t("tpl_save")}</button></div>` : ""}
-  </div>`);
-    const acts = [
-      ["studio_magic_fill", "gen_magic"],
-      ["studio_titles", "gen_titles"],
-      ["studio_description", "gen_description"],
-      ["studio_tags", "gen_tags"],
-      ["studio_compare", "gen_compare"],
-      ["studio_thumbnail", "gen_thumb"]
-    ];
-    body.push(`<div class="sec"><h4>${t("ai")}</h4>
-    ${ready ? "" : `<div class="muted">${t("noKey")} <button class="btn small" data-act="settings">${t("openSettings")}</button></div>`}
-    <div class="actions">${acts.map(([a, k]) => `<button class="btn ${a === "studio_compare" || a === "studio_thumbnail" ? "" : "primary"}" data-act="ai" data-val="${a}" ${!ready || state.running ? "disabled" : ""}>${t(k)}</button>`).join("")}
-      ${state.running ? `<button class="btn" data-act="stop">${t("stop")}</button>` : ""}</div>
-    ${acts.map(([a]) => resultHtml(a, state.ai[a], existing)).join("")}
-  </div>`);
-    parts.push(`<div class="body">${body.join("")}</div><div class="toast" id="toast"></div>`);
-    root.innerHTML = `<div class="panel">${parts.join("")}</div>`;
+    const toolbar = `<div class="toolbar">
+    <button class="tool logo-btn" title="Nubit">N</button>
+    ${TOOLS.map((tl) => {
+      const running = tl.action && state.running === tl.action;
+      if (tl.id === "score") {
+        return `<button class="tool score ${pillClass(sc.optimize)} ${activeTool === "score" ? "active" : ""}" data-act="tool" data-val="score" title="${t("tool_score")}"><span>${d.title ? sc.optimize : "\u2014"}</span><small>IQ</small></button>`;
+      }
+      return `<button class="tool ${activeTool === tl.id ? "active" : ""}" data-act="tool" data-val="${tl.id}" title="${t(tl.label)}">${tl.icon}${running ? '<span class="dotb"></span>' : ""}</button>`;
+    }).join("")}
+    <div class="sep"></div>
+    <button class="tool" data-act="chat" title="${t("chat")}">\u{1F4AC}</button>
+  </div>`;
+    let panel = "";
+    if (activeTool) {
+      const tool = TOOLS.find((x) => x.id === activeTool);
+      const body = toolBody(activeTool, sc, ready);
+      panel = `<div class="panel">
+      <div class="head"><span class="title">${t(tool.label)}</span>
+        ${state.running ? `<button class="btn small" data-act="stop">${t("stop")}</button>` : ""}
+        <button class="icon" data-act="tool" data-val="${activeTool}" title="\u2715">\u2715</button></div>
+      <div class="body">${body}</div>
+      <div class="toast" id="toast"></div>
+    </div>`;
+    }
+    root.innerHTML = toolbar + panel;
     toastEl = root.querySelector("#toast");
     const kwInput = root.querySelector("#kw");
     if (kwInput) {
@@ -614,6 +635,122 @@ ${text}` : text);
         }
       });
     }
+    updateTitleBadge(sc);
+  }
+  function aiButton(action, label, ready, primary = true) {
+    return `<button class="btn ${primary ? "primary" : ""}" data-act="ai" data-val="${action}" ${!ready || state.running ? "disabled" : ""}>${t(label)}</button>`;
+  }
+  function noKeyHtml(ready) {
+    return ready ? "" : `<div class="muted" style="margin-bottom:6px">${t("noKey")} <button class="btn small" data-act="settings">${t("openSettings")}</button></div>`;
+  }
+  function toolBody(tool, sc, ready) {
+    const d = state.draft;
+    const kw = state.focusKeyword;
+    const existing = new Set(d.tags.map((x) => x.toLowerCase()));
+    switch (tool) {
+      case "score": {
+        const r = state.report && state.reportFor === kw ? state.report : void 0;
+        return `<div class="sec">
+        <div class="big ${pillClass(sc.optimize)}"><span class="n">${d.title ? sc.optimize : "\u2014"}</span><span class="l">${t("optimize")}</span></div>
+        ${meter(t("titleSec"), d.title ? sc.title : void 0)}
+        ${meter(t("tool_thumb"), sc.thumbnail)}
+        ${meter(t("descSec"), d.description ? sc.description : void 0)}
+        ${meter(t("tagsSec"), d.tags.length ? sc.tags : void 0)}
+        <div class="muted" style="margin-top:4px">${t("optimize_hint")}</div>
+      </div>
+      <div class="sec"><h4>SEO <span class="pill ${pillClass(sc.seo.score)}">${sc.seo.score}</span></h4>
+        <div class="row"><div class="bar"><i style="width:${sc.seo.score}%"></i></div><button class="btn small" data-act="toggleSeo">${t("show")}</button></div>
+        ${state.showSeoChecks ? checksHtml(sc.seo.checks) : ""}
+      </div>
+      <div class="sec"><h4>${t("kw")}</h4>
+        <div class="row"><input class="kw" id="kw" value="${escapeHtml(kw)}" placeholder="${escapeHtml(guessFocusKeyword(d.title) || "\u2026")}" />
+          <button class="btn" data-act="check" ${!kw || state.reportLoading ? "disabled" : ""}>${state.reportLoading ? t("checking") : t("check")}</button></div>
+        ${state.reportError ? `<div class="err">${escapeHtml(state.reportError)}</div>` : ""}
+        ${r ? `${meter(t("demand"), r.demand)}${meter(t("competition"), r.competition)}
+               <div class="muted">${r.exactInTitle}/${r.resultCount} ${t("exact")}${r.medianViews ? ` \xB7 ${formatCompact(r.medianViews)} views median` : ""}</div>
+               ${r.suggestions.length ? `<div class="muted" style="margin-top:6px">${t("suggestions")}:</div><div class="chips">${r.suggestions.slice(0, 12).map((x) => chip(x, "addtag", "", existing.has(x.toLowerCase()))).join("")}</div>` : ""}` : ""}
+      </div>`;
+      }
+      case "titles": {
+        const titleWords = d.title.split(/\s+/).filter(Boolean).length;
+        return `<div class="sec">
+        <div class="big ${pillClass(sc.title)}"><span class="n">${d.title ? sc.title : "\u2014"}</span><span class="l">${d.title.length} ${t("chars")} \xB7 ${titleWords} ${t("words")}</span></div>
+        ${d.title ? `<div class="row"><div class="bar"><i style="width:${sc.title}%"></i></div><button class="btn small" data-act="toggleTitle">${t("show")}</button></div>${state.showTitleChecks ? checksHtml(sc.titleChecks.checks) : ""}
+          <div class="preview"><div class="muted">${t("preview")}</div><div class="pt">${escapeHtml(d.title.length > 60 ? d.title.slice(0, 57).trimEnd() + "\u2026" : d.title)}</div>${d.description ? `<div class="pd">${escapeHtml(d.description.split("\n").slice(0, 2).join("\n").slice(0, 150))}</div>` : ""}</div>` : `<div class="muted">${t("noTitle")}</div>`}
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_titles", "gen_titles", ready)}</div>${resultHtml("studio_titles", state.ai.studio_titles, existing)}</div>`;
+      }
+      case "description":
+        return `<div class="sec">
+        <div class="big ${pillClass(sc.description)}"><span class="n">${d.description ? sc.description : "\u2014"}</span><span class="l">${d.description.length} ${t("chars")}</span></div>
+        <div class="muted">${t("desc_hint")}</div>
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_description", "gen_description", ready)}</div>${resultHtml("studio_description", state.ai.studio_description, existing)}</div>`;
+      case "thumbnail":
+        return `<div class="sec"><div class="muted">${t("thumb_hint")}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_thumbnail", "gen_thumb", ready)}</div>${resultHtml("studio_thumbnail", state.ai.studio_thumbnail, existing)}</div>`;
+      case "tags": {
+        const tpls = settings.tagTemplates ?? [];
+        const r = state.report && state.reportFor === kw ? state.report : void 0;
+        return `<div class="sec">
+        <div class="big ${pillClass(sc.tags)}"><span class="n">${d.tags.length}</span><span class="l">${t("tagsCount")} \xB7 ${d.tags.join(",").length}/500 ${t("chars")}</span></div>
+        ${d.tags.length ? `<div class="chips">${d.tags.slice(0, 30).map((x) => `<span class="chip added">${escapeHtml(x)}</span>`).join("")}</div>` : ""}
+      </div>
+      <div class="sec"><h4>${t("templates")}</h4>
+        <div class="row">
+          <select class="kw" id="tpl"><option value="">${t("templates")}\u2026</option>${tpls.map((x, i) => `<option value="${i}">${escapeHtml(x.name)} (${x.tags.length})</option>`).join("")}</select>
+          <button class="btn small" data-act="tpl-apply">${t("tpl_apply")}</button>
+          <button class="btn small" data-act="tpl-del" title="${t("tpl_del")}">\u2715</button>
+        </div>
+        ${d.tags.length ? `<div class="row" style="margin-top:4px"><button class="btn small" data-act="tpl-save">${t("tpl_save")}</button></div>` : ""}
+      </div>
+      <div class="sec"><h4>${t("compTags")}</h4>
+        <div class="row"><button class="btn small" data-act="comptags" ${state.compTagsLoading || !r ? "disabled" : ""}>${state.compTagsLoading ? t("checking") : t("loadTags")}</button>
+          ${state.compTags?.length ? `<button class="btn small" data-act="addfreq">${t("addAll")} (\u22652)</button>` : ""}</div>
+        ${!r ? `<div class="muted" style="margin-top:4px">${t("comp_need_kw")}</div>` : ""}
+        ${state.compTags?.length ? `<div class="chips">${state.compTags.slice(0, 24).map((x) => chip(x.tag, "addtag", ` <b>${x.n}</b>`, existing.has(x.tag.toLowerCase()))).join("")}</div>` : ""}
+      </div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_tags", "gen_tags", ready)}</div>${resultHtml("studio_tags", state.ai.studio_tags, existing)}</div>`;
+      }
+      case "compare":
+        return `<div class="sec"><div class="muted">${t("compare_hint")}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_compare", "gen_compare", ready)}</div>${resultHtml("studio_compare", state.ai.studio_compare, existing)}</div>`;
+      case "magic":
+        return `<div class="sec"><div class="muted">${t("magic_hint")}</div></div>
+      <div class="sec">${noKeyHtml(ready)}<div class="actions">${aiButton("studio_magic_fill", "gen_magic", ready)}</div>${resultHtml("studio_magic_fill", state.ai.studio_magic_fill, existing)}</div>`;
+    }
+  }
+  var badgeStyleInjected = false;
+  function updateTitleBadge(sc) {
+    const editable = q(SEL.title);
+    if (!editable) {
+      document.getElementById("nubit-title-score")?.remove();
+      return;
+    }
+    const container = editable.closest("#title-textarea") ?? editable.parentElement;
+    if (!container) return;
+    if (!badgeStyleInjected) {
+      const st = document.createElement("style");
+      st.textContent = `#nubit-title-score{position:absolute;right:10px;top:-11px;z-index:5;font:600 11px/1 Roboto,Arial,sans-serif;padding:4px 8px;border-radius:999px;background:#eee;color:#444;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+#nubit-title-score.good{background:#16a34a;color:#fff}#nubit-title-score.warn{background:#f59e0b;color:#fff}#nubit-title-score.bad{background:#dc2626;color:#fff}`;
+      document.documentElement.appendChild(st);
+      badgeStyleInjected = true;
+    }
+    let badge = document.getElementById("nubit-title-score");
+    if (!badge || badge.parentElement !== container) {
+      badge?.remove();
+      badge = document.createElement("div");
+      badge.id = "nubit-title-score";
+      badge.addEventListener("click", () => {
+        activeTool = "titles";
+        render();
+      });
+      if (getComputedStyle(container).position === "static") container.style.position = "relative";
+      container.appendChild(badge);
+    }
+    const score = state.draft.title ? sc.title : void 0;
+    badge.className = score === void 0 ? "" : score > 80 ? "good" : score > 40 ? "warn" : "bad";
+    badge.textContent = `${t("tool_titlescore")} ${score === void 0 ? "\u2014" : score}`;
   }
   function resultHtml(action, r, existing) {
     if (!r || r.status === "idle") return "";
@@ -732,6 +869,8 @@ ${text}` : text);
   }
   function runAi(action, images) {
     if (state.running) return;
+    const tool = TOOLS.find((x) => x.action === action);
+    if (tool) activeTool = tool.id;
     state.ai[action] = { status: "running", text: "" };
     state.running = action;
     render();
@@ -853,9 +992,9 @@ ${text}` : text);
     if (!el) return;
     const val = el.dataset.val ?? "";
     switch (el.dataset.act) {
-      case "collapse":
-        collapsed = !collapsed;
-        chrome.storage.local.set({ studioCollapsed: collapsed }).catch(() => void 0);
+      case "tool":
+        activeTool = activeTool === val ? null : val;
+        chrome.storage.local.set({ studioTool: activeTool }).catch(() => void 0);
         render();
         break;
       case "chat":
@@ -939,6 +1078,7 @@ ${text}` : text);
     const d = readDraft();
     if (!d) {
       if (host?.isConnected) host.remove();
+      document.getElementById("nubit-title-score")?.remove();
       return;
     }
     if (!host?.isConnected) mount();
@@ -968,7 +1108,8 @@ ${text}` : text);
     settings = await loadSettings();
     lang2 = settings.language;
     setLang(lang2);
-    collapsed = !!(await chrome.storage.local.get("studioCollapsed")).studioCollapsed;
+    const savedTool = (await chrome.storage.local.get("studioTool")).studioTool;
+    if (savedTool === null || typeof savedTool === "string") activeTool = savedTool;
     onSettingsChanged((s) => {
       settings = s;
       lang2 = s.language;

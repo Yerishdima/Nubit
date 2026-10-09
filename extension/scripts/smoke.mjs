@@ -243,7 +243,11 @@ try {
   await st.waitForFunction(() => /SEO \d+/.test(document.getElementById('nubit-studio-host')?.shadowRoot?.textContent ?? ''), null, { timeout: 10000 });
   const stText = () => st.evaluate(() => document.getElementById('nubit-studio-host')?.shadowRoot?.textContent ?? '');
   let txt = await stText();
-  check(/Название \d+|Title \d+/.test(txt), 'studio panel shows a live title score');
+  check(/Optimize/.test(txt), 'studio score panel is open by default');
+  const badgeText = await st.evaluate(() => document.getElementById('nubit-title-score')?.textContent ?? '');
+  check(/(Title|Название) \d+/.test(badgeText), `title score badge is injected into the title field (${badgeText})`);
+  const toolCount = await st.evaluate(() => document.getElementById('nubit-studio-host').shadowRoot.querySelectorAll('.toolbar .tool').length);
+  check(toolCount >= 8, `vertical toolbar has the tool buttons (${toolCount})`);
   check(/вырастить канал youtube/.test(txt) || (await st.evaluate(() => document.getElementById('nubit-studio-host').shadowRoot.querySelector('#kw').value)) === 'вырастить канал youtube', 'studio panel guesses the focus keyword from the title');
   // insertion through the background relay (what the AI / side panel use)
   const ins = await sw.evaluate(async () => {
