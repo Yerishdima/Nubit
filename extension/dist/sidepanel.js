@@ -25,6 +25,8 @@
     geminiModel: "gemini-2.5-pro",
     ollamaBaseUrl: "http://localhost:11434/v1",
     ollamaModel: "llama3.1",
+    customProviders: [],
+    activeCustomProviderId: "",
     effort: "medium",
     youtubeApiKey: "",
     showOverlay: true,
@@ -50,6 +52,9 @@
       }
     });
   }
+  function activeCustomProvider(s) {
+    return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
+  }
   function providerReady(s) {
     switch (s.provider) {
       case "anthropic":
@@ -60,6 +65,10 @@
         return !!s.geminiApiKey;
       case "ollama":
         return !!s.ollamaBaseUrl;
+      case "custom": {
+        const p = activeCustomProvider(s);
+        return !!p && !!p.baseUrl && !!p.model;
+      }
     }
   }
 

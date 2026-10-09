@@ -48,7 +48,7 @@ export async function runAgent(run: AgentRun): Promise<ChatMessage[]> {
       content: result.text,
       toolCalls: result.toolCalls.length ? result.toolCalls : undefined,
       raw: result.raw,
-      rawProvider: provider.id,
+      rawProvider: provider.rawKey,
       rawModel: result.model ?? provider.model,
     };
     messages.push(assistant);

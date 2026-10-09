@@ -1,5 +1,5 @@
-// Options page: API keys, models, display toggles, local tools (native host) and custom APIs.
-import type { CustomApi, Lang, LocalTool, RuntimeMessage, Settings } from '../shared/types.ts';
+// Options page: API keys, models, custom providers, display toggles, local tools (native host) and custom APIs.
+import type { CustomApi, CustomProvider, Lang, LocalTool, RuntimeMessage, Settings } from '../shared/types.ts';
 import { ANTHROPIC_MODELS, DEFAULT_SETTINGS, loadSettings, saveSettings } from '../shared/settings.ts';
 import { escapeHtml } from '../shared/markdown.ts';
 
@@ -9,6 +9,16 @@ const val = (id: string) => ($<HTMLInputElement>(id).value ?? '').trim();
 let settings: Settings;
 let localTools: LocalTool[] = [];
 let customApis: CustomApi[] = [];
+let customProviders: CustomProvider[] = [];
+const fetchedModels = new Map<string, string[]>();
+
+const ATLAS_PRESET: Omit<CustomProvider, 'id'> = {
+  name: 'Atlas API',
+  baseUrl: 'https://aiberloga.website/v1',
+  apiKey: '',
+  model: '',
+  protocol: 'responses',
+};
 
 const TEXT: Record<string, Record<Lang, string>> = {
   subtitle: { ru: 'ИИ-аналитик YouTube. Работает на ваших ключах API.', en: 'AI YouTube analyst. Runs on your own API keys.' },
@@ -27,6 +37,11 @@ const TEXT: Record<string, Record<Lang, string>> = {
     ru: 'Ollama должна быть запущена с разрешённым origin расширения: OLLAMA_ORIGINS=chrome-extension://* ollama serve',
     en: 'Ollama must allow the extension origin: OLLAMA_ORIGINS=chrome-extension://* ollama serve',
   },
+  'hint-custom': {
+    ru: 'Любой OpenAI-совместимый сервис (Atlas API, OpenRouter, ProxyAPI и т. п.). Укажите адрес с /v1 и ключ, нажмите «Доступ и модели» — список моделей подтянется автоматически. Протокол: Responses API — как у Codex; Chat Completions — классический. Если один не работает (ошибка 404), переключите на другой.',
+    en: 'Any OpenAI-compatible service (Atlas API, OpenRouter, ProxyAPI, …). Enter the base URL ending with /v1 and the key, press "Access & models" to load the model list. Protocol: Responses API (what Codex uses) or Chat Completions; if one fails with 404, switch to the other.',
+  },
+  'add-provider': { ru: '+ Добавить провайдера', en: '+ Add provider' },
   'lbl-effort': { ru: 'Глубина рассуждений', en: 'Reasoning effort' },
   'hint-effort': {
     ru: 'Для Claude: low — быстро и дёшево, medium — баланс, high/xhigh — глубокий анализ (дороже и медленнее).',
@@ -42,7 +57,7 @@ const TEXT: Record<string, Record<Lang, string>> = {
   'lbl-overlay': { ru: 'Карточка аналитики на странице видео', en: 'Analytics card on the video page' },
   'lbl-badges': { ru: 'Значки «просмотров в час» на превью', en: '"Views per hour" badges on thumbnails' },
   'lbl-outliers': { ru: 'Считать outlier (сравнение с каналом) — делает дополнительные запросы к YouTube', en: 'Compute outliers (vs channel) — makes extra YouTube requests' },
-  'h-local': { ru: 'Локальный помощник и программы на компьютере', en: 'Local helper and programs on this computer' },
+  'h-local': { ru: 'Локальный помощник и программы на компьютере (необязательно)', en: 'Local helper and programs on this computer (optional)' },
   'hint-local': {
     ru: 'Чтобы ИИ мог запускать yt-dlp, ffmpeg и другие программы, установите локальный помощник: папка native-host → install.bat (нужен Node.js). Укажите ниже, где лежат программы.',
     en: 'To let the AI run yt-dlp, ffmpeg and other programs, install the local helper: folder native-host → install.bat (requires Node.js). Then point to the programs below.',
@@ -54,7 +69,7 @@ const TEXT: Record<string, Record<Lang, string>> = {
   'th-path': { ru: 'Путь к программе', en: 'Path to executable' },
   'th-desc': { ru: 'Что делает (для ИИ)', en: 'What it does (for the AI)' },
   'add-tool': { ru: '+ Добавить программу', en: '+ Add program' },
-  'h-apis': { ru: 'Дополнительные API', en: 'Custom APIs' },
+  'h-apis': { ru: 'Дополнительные API для инструментов (необязательно)', en: 'Custom APIs for tools (optional)' },
   'hint-apis': {
     ru: 'Любой HTTP API (сервис ключевых слов, ваша база, и т. п.). ИИ сможет вызывать его инструментом call_custom_api. Опишите, что умеет API и какие у него пути — это описание читает модель.',
     en: 'Any HTTP API (keyword service, your own backend, …). The AI can call it through call_custom_api. Describe what the API does and its paths — the model reads this description.',
@@ -69,6 +84,8 @@ function applyTexts(lang: Lang): void {
     if (el) el.textContent = v[lang];
   }
   document.documentElement.lang = lang;
+  renderProviderOptions();
+  renderProviders(lang);
   renderTools(lang);
   renderApis(lang);
 }
@@ -81,14 +98,149 @@ function tr(ru: string, en: string): string {
   return lang() === 'ru' ? ru : en;
 }
 
-function showProvider(): void {
-  const p = $<HTMLSelectElement>('provider').value;
-  document.querySelectorAll<HTMLElement>('.prov').forEach((el) => el.classList.toggle('active', el.dataset.prov === p));
+// ---- provider select ---------------------------------------------------------
+
+function providerSelectValue(): string {
+  return $<HTMLSelectElement>('provider').value;
 }
+
+function selectedProvider(): { provider: Settings['provider']; customId: string } {
+  const v = providerSelectValue();
+  if (v.startsWith('custom:')) return { provider: 'custom', customId: v.slice(7) };
+  return { provider: v as Settings['provider'], customId: '' };
+}
+
+/** Rebuilds the provider dropdown (built-in providers + one entry per custom provider). */
+function renderProviderOptions(selected?: string): void {
+  const sel = $<HTMLSelectElement>('provider');
+  const current = selected ?? sel.value;
+  sel.innerHTML = '';
+  sel.add(new Option('Claude (Anthropic)', 'anthropic'));
+  sel.add(new Option('OpenAI (GPT)', 'openai'));
+  sel.add(new Option('Google Gemini', 'gemini'));
+  sel.add(new Option('Ollama (local)', 'ollama'));
+  for (const p of customProviders) sel.add(new Option(`${p.name || tr('Свой провайдер', 'Custom provider')}${p.model ? ` — ${p.model}` : ''}`, `custom:${p.id}`));
+  sel.add(new Option(tr('+ Свой провайдер (OpenAI-совместимый)…', '+ Custom provider (OpenAI-compatible)…'), 'custom:new'));
+  sel.value = current && [...sel.options].some((o) => o.value === current) ? current : 'anthropic';
+}
+
+function showProvider(): void {
+  const { provider, customId } = selectedProvider();
+  document.querySelectorAll<HTMLElement>('.prov').forEach((el) => el.classList.toggle('active', el.dataset.prov === provider));
+  document.querySelectorAll<HTMLElement>('.cp').forEach((el) => el.classList.toggle('active', el.dataset.id === customId));
+}
+
+function onProviderChange(): void {
+  if (providerSelectValue() === 'custom:new') {
+    addProvider({ name: '', baseUrl: '', apiKey: '', model: '', protocol: 'chat' });
+    return;
+  }
+  showProvider();
+}
+
+function addProvider(preset: Omit<CustomProvider, 'id'>): void {
+  const p: CustomProvider = { id: `cp_${Date.now()}`, ...preset };
+  customProviders.push(p);
+  renderProviderOptions(`custom:${p.id}`);
+  renderProviders(lang());
+  showProvider();
+}
+
+function renderProviders(l: Lang): void {
+  const root = $('custom-providers');
+  root.innerHTML = '';
+  const { customId } = selectedProvider();
+  customProviders.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = `cp${p.id === customId ? ' active' : ''}`;
+    div.dataset.id = p.id;
+    const models = fetchedModels.get(p.id) ?? [];
+    div.innerHTML = `
+      <div class="cp-head"><strong>${escapeHtml(p.name || (l === 'ru' ? 'Свой провайдер' : 'Custom provider'))}</strong>
+        <button class="btn small" data-use="${i}">${l === 'ru' ? 'Использовать' : 'Use'}</button>
+        <button class="btn small danger" data-del="${i}">✕</button></div>
+      <div class="row"><label>${l === 'ru' ? 'Название' : 'Name'}</label><input data-f="name" value="${escapeHtml(p.name)}" placeholder="Atlas API" /></div>
+      <div class="row"><label>Base URL</label><input data-f="baseUrl" value="${escapeHtml(p.baseUrl)}" placeholder="https://aiberloga.website/v1" /></div>
+      <div class="row"><label>API key</label><input data-f="apiKey" type="password" value="${escapeHtml(p.apiKey)}" autocomplete="off" /></div>
+      <div class="row"><label>${l === 'ru' ? 'Протокол' : 'Protocol'}</label>
+        <select data-f="protocol">
+          <option value="responses" ${p.protocol === 'responses' ? 'selected' : ''}>Responses API (${l === 'ru' ? 'как в Codex' : 'as in Codex'})</option>
+          <option value="chat" ${p.protocol === 'chat' ? 'selected' : ''}>Chat Completions</option>
+        </select></div>
+      <div class="row"><label>${l === 'ru' ? 'Модель' : 'Model'}</label>
+        <div class="models">
+          <input data-f="model" value="${escapeHtml(p.model)}" placeholder="${l === 'ru' ? 'например gpt-5 или выберите из списка →' : 'e.g. gpt-5 or pick from the list →'}" list="models-${p.id}" />
+          <datalist id="models-${p.id}">${models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join('')}</datalist>
+          <select data-pick="${i}" ${models.length ? '' : 'hidden'}><option value="">${l === 'ru' ? '— список моделей —' : '— model list —'}</option>${models.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join('')}</select>
+        </div></div>
+      <div class="row-actions">
+        <button class="btn" data-fetch="${i}">${l === 'ru' ? 'Доступ и модели' : 'Access & models'}</button>
+        <span class="result" data-fetch-result="${i}"></span>
+      </div>`;
+    div.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-f]').forEach((inp) => {
+      inp.addEventListener('input', () => {
+        (customProviders[i] as unknown as Record<string, string>)[inp.dataset.f!] = inp.value;
+        if (inp.dataset.f === 'name' || inp.dataset.f === 'model') {
+          div.querySelector('strong')!.textContent = customProviders[i].name || (l === 'ru' ? 'Свой провайдер' : 'Custom provider');
+          renderProviderOptions();
+        }
+      });
+    });
+    div.querySelector<HTMLSelectElement>('[data-pick]')!.addEventListener('change', (e) => {
+      const v = (e.currentTarget as HTMLSelectElement).value;
+      if (!v) return;
+      customProviders[i].model = v;
+      div.querySelector<HTMLInputElement>('input[data-f="model"]')!.value = v;
+      renderProviderOptions();
+    });
+    div.querySelector<HTMLButtonElement>('[data-use]')!.addEventListener('click', () => {
+      renderProviderOptions(`custom:${p.id}`);
+      showProvider();
+    });
+    div.querySelector<HTMLButtonElement>('[data-del]')!.addEventListener('click', () => {
+      customProviders.splice(i, 1);
+      renderProviderOptions(selectedProvider().customId === p.id ? 'anthropic' : undefined);
+      renderProviders(l);
+      showProvider();
+    });
+    div.querySelector<HTMLButtonElement>('[data-fetch]')!.addEventListener('click', async (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      const out = div.querySelector<HTMLElement>('[data-fetch-result]')!;
+      const cp = customProviders[i];
+      out.className = 'result';
+      try {
+        const u = new URL(cp.baseUrl.trim());
+        btn.disabled = true;
+        const granted = await chrome.permissions.request({ origins: [`${u.protocol}//${u.host}/*`] });
+        if (!granted) throw new Error(l === 'ru' ? 'доступ к сайту не разрешён' : 'host access was denied');
+        out.textContent = l === 'ru' ? 'доступ есть, загружаю модели…' : 'access granted, loading models…';
+        const res = (await chrome.runtime.sendMessage({ type: 'fetchModels', baseUrl: cp.baseUrl.trim(), apiKey: cp.apiKey.trim() } satisfies RuntimeMessage)) as
+          | { models: string[] }
+          | { error: string };
+        if ('error' in res) throw new Error(res.error);
+        fetchedModels.set(cp.id, res.models);
+        if (!cp.model && res.models.length === 1) cp.model = res.models[0];
+        out.textContent = l === 'ru' ? `найдено моделей: ${res.models.length}` : `models found: ${res.models.length}`;
+        out.className = 'result ok';
+        renderProviders(l);
+        div.remove();
+      } catch (err) {
+        out.textContent = err instanceof Error ? err.message : String(err);
+        out.className = 'result bad';
+      } finally {
+        btn.disabled = false;
+      }
+    });
+    root.appendChild(div);
+  });
+}
+
+// ---- fill / collect ------------------------------------------------------------
 
 function fill(): void {
   $<HTMLSelectElement>('language').value = settings.language;
-  $<HTMLSelectElement>('provider').value = settings.provider;
+  customProviders = settings.customProviders.map((p) => ({ ...p }));
+  renderProviderOptions(settings.provider === 'custom' ? `custom:${settings.activeCustomProviderId || customProviders[0]?.id || ''}` : settings.provider);
   const sel = $<HTMLSelectElement>('anthropicModel');
   sel.innerHTML = '';
   const known = ANTHROPIC_MODELS.some((m) => m.id === settings.anthropicModel);
@@ -103,8 +255,8 @@ function fill(): void {
   localTools = settings.localTools.map((t) => ({ ...t }));
   customApis = settings.customApis.map((a) => ({ ...a, headers: { ...a.headers } }));
   $('ext-id').textContent = chrome.runtime.id;
-  showProvider();
   applyTexts(settings.language);
+  showProvider();
 }
 
 function renderTools(l: Lang): void {
@@ -196,10 +348,15 @@ function renderApis(l: Lang): void {
 }
 
 function collect(): Settings {
+  const { provider, customId } = selectedProvider();
   return {
     ...DEFAULT_SETTINGS,
     language: lang(),
-    provider: $<HTMLSelectElement>('provider').value as Settings['provider'],
+    provider,
+    activeCustomProviderId: customId,
+    customProviders: customProviders
+      .map((p) => ({ ...p, name: p.name.trim(), baseUrl: p.baseUrl.trim(), apiKey: p.apiKey.trim(), model: p.model.trim() }))
+      .filter((p) => p.name || p.baseUrl),
     anthropicApiKey: val('anthropicApiKey'),
     anthropicModel: val('anthropicModel') || DEFAULT_SETTINGS.anthropicModel,
     openaiApiKey: val('openaiApiKey'),
@@ -234,9 +391,11 @@ async function save(): Promise<void> {
 async function main(): Promise<void> {
   settings = await loadSettings();
   fill();
-  $('provider').addEventListener('change', showProvider);
+  $('provider').addEventListener('change', onProviderChange);
   $('language').addEventListener('change', () => applyTexts(lang()));
   $('save').addEventListener('click', save);
+  $('add-provider').addEventListener('click', () => addProvider({ name: '', baseUrl: '', apiKey: '', model: '', protocol: 'chat' }));
+  $('add-atlas').addEventListener('click', () => addProvider({ ...ATLAS_PRESET }));
   $('add-tool').addEventListener('click', () => {
     localTools.push({ name: '', path: '', description: '' });
     renderTools(lang());

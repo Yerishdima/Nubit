@@ -1,8 +1,21 @@
 // Shared types used across background, content scripts, side panel and options.
 
 export type Lang = 'ru' | 'en';
-export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama';
+export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'custom';
 export type Effort = 'low' | 'medium' | 'high' | 'xhigh';
+/** Wire protocol of an OpenAI-compatible service. */
+export type WireProtocol = 'chat' | 'responses';
+
+/** A user-registered OpenAI-compatible model provider (Atlas, OpenRouter, ProxyAPI, …). */
+export interface CustomProvider {
+  id: string;
+  name: string;
+  /** Base URL ending with /v1 (the extension appends /chat/completions or /responses). */
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  protocol: WireProtocol;
+}
 
 /** A third-party HTTP API the user registered in settings; exposed to the model as `call_custom_api`. */
 export interface CustomApi {
@@ -35,6 +48,9 @@ export interface Settings {
   geminiModel: string;
   ollamaBaseUrl: string;
   ollamaModel: string;
+  customProviders: CustomProvider[];
+  /** Which entry of customProviders is active when provider === 'custom'. */
+  activeCustomProviderId: string;
   effort: Effort;
   youtubeApiKey: string;
   showOverlay: boolean;
@@ -218,9 +234,10 @@ export type ChatMessage =
       role: 'assistant';
       content: string;
       toolCalls?: ToolCall[];
-      /** Provider-native content blocks, replayed verbatim when the same provider continues the conversation. */
+      /** Provider-native content blocks, replayed verbatim when a provider with the same wire format continues. */
       raw?: unknown;
-      rawProvider?: ProviderId;
+      /** Wire format of `raw`: "anthropic", "openai-chat" or "openai-responses". */
+      rawProvider?: string;
       rawModel?: string;
     }
   | { role: 'tool'; results: ToolResult[] };
@@ -268,4 +285,5 @@ export type RuntimeMessage =
   | { type: 'nativePing' }
   | { type: 'nativeWhich'; name: string }
   | { type: 'testProvider' }
+  | { type: 'fetchModels'; baseUrl: string; apiKey: string }
   | { type: 'pageContextSummary'; tabId: number | null };

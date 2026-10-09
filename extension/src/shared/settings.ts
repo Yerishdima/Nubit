@@ -32,6 +32,8 @@ export const DEFAULT_SETTINGS: Settings = {
   geminiModel: 'gemini-2.5-pro',
   ollamaBaseUrl: 'http://localhost:11434/v1',
   ollamaModel: 'llama3.1',
+  customProviders: [],
+  activeCustomProviderId: '',
   effort: 'medium',
   youtubeApiKey: '',
   showOverlay: true,
@@ -66,6 +68,10 @@ export function onSettingsChanged(cb: (s: Settings) => void): void {
   });
 }
 
+export function activeCustomProvider(s: Settings) {
+  return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
+}
+
 export function providerReady(s: Settings): boolean {
   switch (s.provider) {
     case 'anthropic':
@@ -76,6 +82,10 @@ export function providerReady(s: Settings): boolean {
       return !!s.geminiApiKey;
     case 'ollama':
       return !!s.ollamaBaseUrl;
+    case 'custom': {
+      const p = activeCustomProvider(s);
+      return !!p && !!p.baseUrl && !!p.model;
+    }
   }
 }
 
@@ -89,5 +99,7 @@ export function currentModel(s: Settings): string {
       return s.geminiModel;
     case 'ollama':
       return s.ollamaModel;
+    case 'custom':
+      return activeCustomProvider(s)?.model ?? '';
   }
 }

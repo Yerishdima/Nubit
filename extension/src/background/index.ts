@@ -82,6 +82,8 @@ chrome.runtime.onMessage.addListener((msg: RuntimeMessage, sender, sendResponse)
       return reply(loadSettings().then((s) => nativeWhich(s.nativeHostName, msg.name)));
     case 'testProvider':
       return reply(testProvider());
+    case 'fetchModels':
+      return reply(fetchModels(msg.baseUrl, msg.apiKey));
     case 'pageContextSummary':
       return reply(Promise.all([getPageContext(msg.tabId), loadSettings()]).then(([ctx, s]) => ({ summary: contextSummary(ctx, s), kind: ctx?.kind ?? 'other' })));
   }
@@ -98,6 +100,38 @@ async function openPanel(tabId: number, action?: QuickActionId): Promise<void> {
     port.postMessage({ type: 'run_action', action } satisfies PanelEvent);
   }
   await chrome.sidePanel.open({ tabId });
+}
+
+/** Lists models of an OpenAI-compatible service (GET {base}/models). */
+async function fetchModels(baseUrl: string, apiKey: string): Promise<{ models: string[] }> {
+  const base = baseUrl.trim().replace(/\/+$/, '');
+  if (!/^https?:\/\//.test(base)) throw new Error('Base URL must start with http(s)://');
+  const headers: Record<string, string> = {};
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  let res: Response;
+  try {
+    res = await fetch(`${base}/models`, { headers });
+  } catch (err) {
+    throw new Error(`Could not reach ${base}/models (${err instanceof Error ? err.message : String(err)}). Press "Grant access" first.`);
+  }
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text.slice(0, 300);
+    try {
+      msg = JSON.parse(text)?.error?.message ?? msg;
+    } catch {
+      /* raw */
+    }
+    throw new Error(`HTTP ${res.status}: ${msg}`);
+  }
+  let json: { data?: Array<{ id?: string }>; models?: Array<{ id?: string; name?: string }> } = {};
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error('The /models endpoint did not return JSON — check the base URL (it should end with /v1).');
+  }
+  const list = (json.data ?? json.models ?? []).map((m) => m.id ?? (m as { name?: string }).name ?? '').filter(Boolean);
+  return { models: [...new Set(list)].sort() };
 }
 
 async function testProvider(): Promise<{ ok: boolean; message: string }> {

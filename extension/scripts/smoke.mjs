@@ -106,8 +106,23 @@ try {
   await opt.click('#save');
   await opt.waitForFunction(() => document.getElementById('save-result')?.textContent === 'Saved');
   check(true, 'options page saves settings');
+  // custom provider preset (Atlas API)
+  await opt.click('#add-atlas');
+  await opt.waitForSelector('.cp');
+  check((await opt.inputValue('.cp input[data-f="baseUrl"]')) === 'https://aiberloga.website/v1', 'Atlas preset fills the base URL');
+  check((await opt.inputValue('#provider')).startsWith('custom:'), 'adding a provider selects it in the dropdown');
+  await opt.fill('.cp input[data-f="apiKey"]', 'atlas-key');
+  await opt.fill('.cp input[data-f="model"]', 'gpt-5');
+  await opt.click('#save');
+  await opt.waitForFunction(() => document.getElementById('save-result')?.textContent === 'Saved');
+  const stored = await opt.evaluate(async () => (await chrome.storage.local.get('settings')).settings);
+  check(stored.provider === 'custom' && stored.customProviders?.[0]?.name === 'Atlas API' && stored.customProviders[0].protocol === 'responses' && stored.activeCustomProviderId === stored.customProviders[0].id, 'custom provider is saved and active');
   await opt.screenshot({ path: path.join(out, 'options.png'), fullPage: true });
   check(optErrors.length === 0, `options page has no JS errors (${optErrors.join('; ')})`);
+  // back to Claude for the rest of the checks
+  await opt.selectOption('#provider', 'anthropic');
+  await opt.click('#save');
+  await opt.waitForFunction(() => document.getElementById('save-result')?.textContent === 'Saved');
 
   // 2. Side panel page
   const panel = await context.newPage();

@@ -20,6 +20,8 @@ export interface TurnResult {
 
 export interface Provider {
   readonly id: ProviderId;
+  /** Wire format key stored on assistant messages (`rawProvider`) so raw blocks are replayed only by compatible providers. */
+  readonly rawKey: string;
   readonly model: string;
   run(req: RunRequest): Promise<TurnResult>;
 }

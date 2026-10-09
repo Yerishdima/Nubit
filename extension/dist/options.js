@@ -31,6 +31,8 @@
     geminiModel: "gemini-2.5-pro",
     ollamaBaseUrl: "http://localhost:11434/v1",
     ollamaModel: "llama3.1",
+    customProviders: [],
+    activeCustomProviderId: "",
     effort: "medium",
     youtubeApiKey: "",
     showOverlay: true,
@@ -64,6 +66,15 @@
   var settings;
   var localTools = [];
   var customApis = [];
+  var customProviders = [];
+  var fetchedModels = /* @__PURE__ */ new Map();
+  var ATLAS_PRESET = {
+    name: "Atlas API",
+    baseUrl: "https://aiberloga.website/v1",
+    apiKey: "",
+    model: "",
+    protocol: "responses"
+  };
   var TEXT = {
     subtitle: { ru: "\u0418\u0418-\u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A YouTube. \u0420\u0430\u0431\u043E\u0442\u0430\u0435\u0442 \u043D\u0430 \u0432\u0430\u0448\u0438\u0445 \u043A\u043B\u044E\u0447\u0430\u0445 API.", en: "AI YouTube analyst. Runs on your own API keys." },
     "lbl-language": { ru: "\u042F\u0437\u044B\u043A", en: "Language" },
@@ -81,6 +92,11 @@
       ru: "Ollama \u0434\u043E\u043B\u0436\u043D\u0430 \u0431\u044B\u0442\u044C \u0437\u0430\u043F\u0443\u0449\u0435\u043D\u0430 \u0441 \u0440\u0430\u0437\u0440\u0435\u0448\u0451\u043D\u043D\u044B\u043C origin \u0440\u0430\u0441\u0448\u0438\u0440\u0435\u043D\u0438\u044F: OLLAMA_ORIGINS=chrome-extension://* ollama serve",
       en: "Ollama must allow the extension origin: OLLAMA_ORIGINS=chrome-extension://* ollama serve"
     },
+    "hint-custom": {
+      ru: "\u041B\u044E\u0431\u043E\u0439 OpenAI-\u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u0439 \u0441\u0435\u0440\u0432\u0438\u0441 (Atlas API, OpenRouter, ProxyAPI \u0438 \u0442. \u043F.). \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u0430\u0434\u0440\u0435\u0441 \u0441 /v1 \u0438 \u043A\u043B\u044E\u0447, \u043D\u0430\u0436\u043C\u0438\u0442\u0435 \xAB\u0414\u043E\u0441\u0442\u0443\u043F \u0438 \u043C\u043E\u0434\u0435\u043B\u0438\xBB \u2014 \u0441\u043F\u0438\u0441\u043E\u043A \u043C\u043E\u0434\u0435\u043B\u0435\u0439 \u043F\u043E\u0434\u0442\u044F\u043D\u0435\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438. \u041F\u0440\u043E\u0442\u043E\u043A\u043E\u043B: Responses API \u2014 \u043A\u0430\u043A \u0443 Codex; Chat Completions \u2014 \u043A\u043B\u0430\u0441\u0441\u0438\u0447\u0435\u0441\u043A\u0438\u0439. \u0415\u0441\u043B\u0438 \u043E\u0434\u0438\u043D \u043D\u0435 \u0440\u0430\u0431\u043E\u0442\u0430\u0435\u0442 (\u043E\u0448\u0438\u0431\u043A\u0430 404), \u043F\u0435\u0440\u0435\u043A\u043B\u044E\u0447\u0438\u0442\u0435 \u043D\u0430 \u0434\u0440\u0443\u0433\u043E\u0439.",
+      en: 'Any OpenAI-compatible service (Atlas API, OpenRouter, ProxyAPI, \u2026). Enter the base URL ending with /v1 and the key, press "Access & models" to load the model list. Protocol: Responses API (what Codex uses) or Chat Completions; if one fails with 404, switch to the other.'
+    },
+    "add-provider": { ru: "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440\u0430", en: "+ Add provider" },
     "lbl-effort": { ru: "\u0413\u043B\u0443\u0431\u0438\u043D\u0430 \u0440\u0430\u0441\u0441\u0443\u0436\u0434\u0435\u043D\u0438\u0439", en: "Reasoning effort" },
     "hint-effort": {
       ru: "\u0414\u043B\u044F Claude: low \u2014 \u0431\u044B\u0441\u0442\u0440\u043E \u0438 \u0434\u0451\u0448\u0435\u0432\u043E, medium \u2014 \u0431\u0430\u043B\u0430\u043D\u0441, high/xhigh \u2014 \u0433\u043B\u0443\u0431\u043E\u043A\u0438\u0439 \u0430\u043D\u0430\u043B\u0438\u0437 (\u0434\u043E\u0440\u043E\u0436\u0435 \u0438 \u043C\u0435\u0434\u043B\u0435\u043D\u043D\u0435\u0435).",
@@ -96,7 +112,7 @@
     "lbl-overlay": { ru: "\u041A\u0430\u0440\u0442\u043E\u0447\u043A\u0430 \u0430\u043D\u0430\u043B\u0438\u0442\u0438\u043A\u0438 \u043D\u0430 \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435 \u0432\u0438\u0434\u0435\u043E", en: "Analytics card on the video page" },
     "lbl-badges": { ru: "\u0417\u043D\u0430\u0447\u043A\u0438 \xAB\u043F\u0440\u043E\u0441\u043C\u043E\u0442\u0440\u043E\u0432 \u0432 \u0447\u0430\u0441\xBB \u043D\u0430 \u043F\u0440\u0435\u0432\u044C\u044E", en: '"Views per hour" badges on thumbnails' },
     "lbl-outliers": { ru: "\u0421\u0447\u0438\u0442\u0430\u0442\u044C outlier (\u0441\u0440\u0430\u0432\u043D\u0435\u043D\u0438\u0435 \u0441 \u043A\u0430\u043D\u0430\u043B\u043E\u043C) \u2014 \u0434\u0435\u043B\u0430\u0435\u0442 \u0434\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435 \u0437\u0430\u043F\u0440\u043E\u0441\u044B \u043A YouTube", en: "Compute outliers (vs channel) \u2014 makes extra YouTube requests" },
-    "h-local": { ru: "\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u043E\u043C\u043E\u0449\u043D\u0438\u043A \u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043D\u0430 \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435", en: "Local helper and programs on this computer" },
+    "h-local": { ru: "\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u043E\u043C\u043E\u0449\u043D\u0438\u043A \u0438 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B \u043D\u0430 \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435 (\u043D\u0435\u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E)", en: "Local helper and programs on this computer (optional)" },
     "hint-local": {
       ru: "\u0427\u0442\u043E\u0431\u044B \u0418\u0418 \u043C\u043E\u0433 \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u0442\u044C yt-dlp, ffmpeg \u0438 \u0434\u0440\u0443\u0433\u0438\u0435 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B, \u0443\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u0435 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u044B\u0439 \u043F\u043E\u043C\u043E\u0449\u043D\u0438\u043A: \u043F\u0430\u043F\u043A\u0430 native-host \u2192 install.bat (\u043D\u0443\u0436\u0435\u043D Node.js). \u0423\u043A\u0430\u0436\u0438\u0442\u0435 \u043D\u0438\u0436\u0435, \u0433\u0434\u0435 \u043B\u0435\u0436\u0430\u0442 \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u044B.",
       en: "To let the AI run yt-dlp, ffmpeg and other programs, install the local helper: folder native-host \u2192 install.bat (requires Node.js). Then point to the programs below."
@@ -108,7 +124,7 @@
     "th-path": { ru: "\u041F\u0443\u0442\u044C \u043A \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0435", en: "Path to executable" },
     "th-desc": { ru: "\u0427\u0442\u043E \u0434\u0435\u043B\u0430\u0435\u0442 (\u0434\u043B\u044F \u0418\u0418)", en: "What it does (for the AI)" },
     "add-tool": { ru: "+ \u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u043F\u0440\u043E\u0433\u0440\u0430\u043C\u043C\u0443", en: "+ Add program" },
-    "h-apis": { ru: "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435 API", en: "Custom APIs" },
+    "h-apis": { ru: "\u0414\u043E\u043F\u043E\u043B\u043D\u0438\u0442\u0435\u043B\u044C\u043D\u044B\u0435 API \u0434\u043B\u044F \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u0432 (\u043D\u0435\u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u043E)", en: "Custom APIs for tools (optional)" },
     "hint-apis": {
       ru: "\u041B\u044E\u0431\u043E\u0439 HTTP API (\u0441\u0435\u0440\u0432\u0438\u0441 \u043A\u043B\u044E\u0447\u0435\u0432\u044B\u0445 \u0441\u043B\u043E\u0432, \u0432\u0430\u0448\u0430 \u0431\u0430\u0437\u0430, \u0438 \u0442. \u043F.). \u0418\u0418 \u0441\u043C\u043E\u0436\u0435\u0442 \u0432\u044B\u0437\u044B\u0432\u0430\u0442\u044C \u0435\u0433\u043E \u0438\u043D\u0441\u0442\u0440\u0443\u043C\u0435\u043D\u0442\u043E\u043C call_custom_api. \u041E\u043F\u0438\u0448\u0438\u0442\u0435, \u0447\u0442\u043E \u0443\u043C\u0435\u0435\u0442 API \u0438 \u043A\u0430\u043A\u0438\u0435 \u0443 \u043D\u0435\u0433\u043E \u043F\u0443\u0442\u0438 \u2014 \u044D\u0442\u043E \u043E\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u0447\u0438\u0442\u0430\u0435\u0442 \u043C\u043E\u0434\u0435\u043B\u044C.",
       en: "Any HTTP API (keyword service, your own backend, \u2026). The AI can call it through call_custom_api. Describe what the API does and its paths \u2014 the model reads this description."
@@ -122,6 +138,8 @@
       if (el) el.textContent = v[lang2];
     }
     document.documentElement.lang = lang2;
+    renderProviderOptions();
+    renderProviders(lang2);
     renderTools(lang2);
     renderApis(lang2);
   }
@@ -131,13 +149,135 @@
   function tr(ru, en) {
     return lang() === "ru" ? ru : en;
   }
+  function providerSelectValue() {
+    return $("provider").value;
+  }
+  function selectedProvider() {
+    const v = providerSelectValue();
+    if (v.startsWith("custom:")) return { provider: "custom", customId: v.slice(7) };
+    return { provider: v, customId: "" };
+  }
+  function renderProviderOptions(selected) {
+    const sel = $("provider");
+    const current = selected ?? sel.value;
+    sel.innerHTML = "";
+    sel.add(new Option("Claude (Anthropic)", "anthropic"));
+    sel.add(new Option("OpenAI (GPT)", "openai"));
+    sel.add(new Option("Google Gemini", "gemini"));
+    sel.add(new Option("Ollama (local)", "ollama"));
+    for (const p of customProviders) sel.add(new Option(`${p.name || tr("\u0421\u0432\u043E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440", "Custom provider")}${p.model ? ` \u2014 ${p.model}` : ""}`, `custom:${p.id}`));
+    sel.add(new Option(tr("+ \u0421\u0432\u043E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440 (OpenAI-\u0441\u043E\u0432\u043C\u0435\u0441\u0442\u0438\u043C\u044B\u0439)\u2026", "+ Custom provider (OpenAI-compatible)\u2026"), "custom:new"));
+    sel.value = current && [...sel.options].some((o) => o.value === current) ? current : "anthropic";
+  }
   function showProvider() {
-    const p = $("provider").value;
-    document.querySelectorAll(".prov").forEach((el) => el.classList.toggle("active", el.dataset.prov === p));
+    const { provider, customId } = selectedProvider();
+    document.querySelectorAll(".prov").forEach((el) => el.classList.toggle("active", el.dataset.prov === provider));
+    document.querySelectorAll(".cp").forEach((el) => el.classList.toggle("active", el.dataset.id === customId));
+  }
+  function onProviderChange() {
+    if (providerSelectValue() === "custom:new") {
+      addProvider({ name: "", baseUrl: "", apiKey: "", model: "", protocol: "chat" });
+      return;
+    }
+    showProvider();
+  }
+  function addProvider(preset) {
+    const p = { id: `cp_${Date.now()}`, ...preset };
+    customProviders.push(p);
+    renderProviderOptions(`custom:${p.id}`);
+    renderProviders(lang());
+    showProvider();
+  }
+  function renderProviders(l) {
+    const root = $("custom-providers");
+    root.innerHTML = "";
+    const { customId } = selectedProvider();
+    customProviders.forEach((p, i) => {
+      const div = document.createElement("div");
+      div.className = `cp${p.id === customId ? " active" : ""}`;
+      div.dataset.id = p.id;
+      const models = fetchedModels.get(p.id) ?? [];
+      div.innerHTML = `
+      <div class="cp-head"><strong>${escapeHtml(p.name || (l === "ru" ? "\u0421\u0432\u043E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440" : "Custom provider"))}</strong>
+        <button class="btn small" data-use="${i}">${l === "ru" ? "\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C" : "Use"}</button>
+        <button class="btn small danger" data-del="${i}">\u2715</button></div>
+      <div class="row"><label>${l === "ru" ? "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435" : "Name"}</label><input data-f="name" value="${escapeHtml(p.name)}" placeholder="Atlas API" /></div>
+      <div class="row"><label>Base URL</label><input data-f="baseUrl" value="${escapeHtml(p.baseUrl)}" placeholder="https://aiberloga.website/v1" /></div>
+      <div class="row"><label>API key</label><input data-f="apiKey" type="password" value="${escapeHtml(p.apiKey)}" autocomplete="off" /></div>
+      <div class="row"><label>${l === "ru" ? "\u041F\u0440\u043E\u0442\u043E\u043A\u043E\u043B" : "Protocol"}</label>
+        <select data-f="protocol">
+          <option value="responses" ${p.protocol === "responses" ? "selected" : ""}>Responses API (${l === "ru" ? "\u043A\u0430\u043A \u0432 Codex" : "as in Codex"})</option>
+          <option value="chat" ${p.protocol === "chat" ? "selected" : ""}>Chat Completions</option>
+        </select></div>
+      <div class="row"><label>${l === "ru" ? "\u041C\u043E\u0434\u0435\u043B\u044C" : "Model"}</label>
+        <div class="models">
+          <input data-f="model" value="${escapeHtml(p.model)}" placeholder="${l === "ru" ? "\u043D\u0430\u043F\u0440\u0438\u043C\u0435\u0440 gpt-5 \u0438\u043B\u0438 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0438\u0437 \u0441\u043F\u0438\u0441\u043A\u0430 \u2192" : "e.g. gpt-5 or pick from the list \u2192"}" list="models-${p.id}" />
+          <datalist id="models-${p.id}">${models.map((m) => `<option value="${escapeHtml(m)}"></option>`).join("")}</datalist>
+          <select data-pick="${i}" ${models.length ? "" : "hidden"}><option value="">${l === "ru" ? "\u2014 \u0441\u043F\u0438\u0441\u043E\u043A \u043C\u043E\u0434\u0435\u043B\u0435\u0439 \u2014" : "\u2014 model list \u2014"}</option>${models.map((m) => `<option value="${escapeHtml(m)}">${escapeHtml(m)}</option>`).join("")}</select>
+        </div></div>
+      <div class="row-actions">
+        <button class="btn" data-fetch="${i}">${l === "ru" ? "\u0414\u043E\u0441\u0442\u0443\u043F \u0438 \u043C\u043E\u0434\u0435\u043B\u0438" : "Access & models"}</button>
+        <span class="result" data-fetch-result="${i}"></span>
+      </div>`;
+      div.querySelectorAll("[data-f]").forEach((inp) => {
+        inp.addEventListener("input", () => {
+          customProviders[i][inp.dataset.f] = inp.value;
+          if (inp.dataset.f === "name" || inp.dataset.f === "model") {
+            div.querySelector("strong").textContent = customProviders[i].name || (l === "ru" ? "\u0421\u0432\u043E\u0439 \u043F\u0440\u043E\u0432\u0430\u0439\u0434\u0435\u0440" : "Custom provider");
+            renderProviderOptions();
+          }
+        });
+      });
+      div.querySelector("[data-pick]").addEventListener("change", (e) => {
+        const v = e.currentTarget.value;
+        if (!v) return;
+        customProviders[i].model = v;
+        div.querySelector('input[data-f="model"]').value = v;
+        renderProviderOptions();
+      });
+      div.querySelector("[data-use]").addEventListener("click", () => {
+        renderProviderOptions(`custom:${p.id}`);
+        showProvider();
+      });
+      div.querySelector("[data-del]").addEventListener("click", () => {
+        customProviders.splice(i, 1);
+        renderProviderOptions(selectedProvider().customId === p.id ? "anthropic" : void 0);
+        renderProviders(l);
+        showProvider();
+      });
+      div.querySelector("[data-fetch]").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        const out = div.querySelector("[data-fetch-result]");
+        const cp = customProviders[i];
+        out.className = "result";
+        try {
+          const u = new URL(cp.baseUrl.trim());
+          btn.disabled = true;
+          const granted = await chrome.permissions.request({ origins: [`${u.protocol}//${u.host}/*`] });
+          if (!granted) throw new Error(l === "ru" ? "\u0434\u043E\u0441\u0442\u0443\u043F \u043A \u0441\u0430\u0439\u0442\u0443 \u043D\u0435 \u0440\u0430\u0437\u0440\u0435\u0448\u0451\u043D" : "host access was denied");
+          out.textContent = l === "ru" ? "\u0434\u043E\u0441\u0442\u0443\u043F \u0435\u0441\u0442\u044C, \u0437\u0430\u0433\u0440\u0443\u0436\u0430\u044E \u043C\u043E\u0434\u0435\u043B\u0438\u2026" : "access granted, loading models\u2026";
+          const res = await chrome.runtime.sendMessage({ type: "fetchModels", baseUrl: cp.baseUrl.trim(), apiKey: cp.apiKey.trim() });
+          if ("error" in res) throw new Error(res.error);
+          fetchedModels.set(cp.id, res.models);
+          if (!cp.model && res.models.length === 1) cp.model = res.models[0];
+          out.textContent = l === "ru" ? `\u043D\u0430\u0439\u0434\u0435\u043D\u043E \u043C\u043E\u0434\u0435\u043B\u0435\u0439: ${res.models.length}` : `models found: ${res.models.length}`;
+          out.className = "result ok";
+          renderProviders(l);
+          div.remove();
+        } catch (err) {
+          out.textContent = err instanceof Error ? err.message : String(err);
+          out.className = "result bad";
+        } finally {
+          btn.disabled = false;
+        }
+      });
+      root.appendChild(div);
+    });
   }
   function fill() {
     $("language").value = settings.language;
-    $("provider").value = settings.provider;
+    customProviders = settings.customProviders.map((p) => ({ ...p }));
+    renderProviderOptions(settings.provider === "custom" ? `custom:${settings.activeCustomProviderId || customProviders[0]?.id || ""}` : settings.provider);
     const sel = $("anthropicModel");
     sel.innerHTML = "";
     const known = ANTHROPIC_MODELS.some((m) => m.id === settings.anthropicModel);
@@ -152,8 +292,8 @@
     localTools = settings.localTools.map((t) => ({ ...t }));
     customApis = settings.customApis.map((a) => ({ ...a, headers: { ...a.headers } }));
     $("ext-id").textContent = chrome.runtime.id;
-    showProvider();
     applyTexts(settings.language);
+    showProvider();
   }
   function renderTools(l) {
     const tbody = $("local-tools").querySelector("tbody");
@@ -238,10 +378,13 @@
     });
   }
   function collect() {
+    const { provider, customId } = selectedProvider();
     return {
       ...DEFAULT_SETTINGS,
       language: lang(),
-      provider: $("provider").value,
+      provider,
+      activeCustomProviderId: customId,
+      customProviders: customProviders.map((p) => ({ ...p, name: p.name.trim(), baseUrl: p.baseUrl.trim(), apiKey: p.apiKey.trim(), model: p.model.trim() })).filter((p) => p.name || p.baseUrl),
       anthropicApiKey: val("anthropicApiKey"),
       anthropicModel: val("anthropicModel") || DEFAULT_SETTINGS.anthropicModel,
       openaiApiKey: val("openaiApiKey"),
@@ -272,9 +415,11 @@
   async function main() {
     settings = await loadSettings();
     fill();
-    $("provider").addEventListener("change", showProvider);
+    $("provider").addEventListener("change", onProviderChange);
     $("language").addEventListener("change", () => applyTexts(lang()));
     $("save").addEventListener("click", save);
+    $("add-provider").addEventListener("click", () => addProvider({ name: "", baseUrl: "", apiKey: "", model: "", protocol: "chat" }));
+    $("add-atlas").addEventListener("click", () => addProvider({ ...ATLAS_PRESET }));
     $("add-tool").addEventListener("click", () => {
       localTools.push({ name: "", path: "", description: "" });
       renderTools(lang());

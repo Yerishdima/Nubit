@@ -1172,6 +1172,8 @@ var DEFAULT_SETTINGS = {
   geminiModel: "gemini-2.5-pro",
   ollamaBaseUrl: "http://localhost:11434/v1",
   ollamaModel: "llama3.1",
+  customProviders: [],
+  activeCustomProviderId: "",
   effort: "medium",
   youtubeApiKey: "",
   showOverlay: true,
@@ -1189,6 +1191,9 @@ async function loadSettings() {
   const names = new Set(merged.localTools.map((t) => t.name));
   for (const t of DEFAULT_LOCAL_TOOLS) if (!names.has(t.name)) merged.localTools.push({ ...t });
   return merged;
+}
+function activeCustomProvider(s) {
+  return s.customProviders.find((p) => p.id === s.activeCustomProviderId) ?? s.customProviders[0];
 }
 
 // src/shared/metrics.ts
@@ -18599,6 +18604,7 @@ function toAnthropicMessages(messages, model) {
 }
 var AnthropicProvider = class {
   id = "anthropic";
+  rawKey = "anthropic";
   model;
   effort;
   client;
@@ -18681,23 +18687,92 @@ function describeApiError(err) {
 }
 
 // src/background/providers/openai.ts
+async function readSse(res, onData) {
+  if (!res.body) throw new ProviderError("Empty response body");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  const handleLine = (line) => {
+    if (!line.startsWith("data:")) return;
+    const data = line.slice(5).trim();
+    if (!data || data === "[DONE]") return;
+    try {
+      onData(JSON.parse(data));
+    } catch {
+    }
+  };
+  for (; ; ) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      handleLine(buf.slice(0, nl).trim());
+      buf = buf.slice(nl + 1);
+    }
+  }
+  const rest = buf.trim();
+  if (rest.startsWith("data:")) handleLine(rest);
+  else if (rest.startsWith("{")) {
+    try {
+      onData(JSON.parse(rest));
+    } catch {
+    }
+  }
+}
+async function describeHttpError(res, label) {
+  const txt = await res.text().catch(() => "");
+  let msg = txt.slice(0, 400);
+  try {
+    msg = JSON.parse(txt)?.error?.message ?? msg;
+  } catch {
+  }
+  if (res.status === 401 || res.status === 403) return new ProviderError(`${label}: invalid API key or no access (${msg})`);
+  if (res.status === 404) return new ProviderError(`${label}: endpoint not found (HTTP 404). Check the base URL (it should end with /v1) and the protocol (Chat Completions vs Responses API). ${msg}`);
+  return new ProviderError(`${label} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500);
+}
 var OpenAICompatProvider = class {
   id;
+  rawKey;
   model;
+  protocol;
   baseUrl;
   apiKey;
-  constructor(id, baseUrl, apiKey, model) {
-    this.id = id;
-    this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
-    this.model = model;
+  label;
+  constructor(opts) {
+    this.id = opts.id;
+    this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
+    this.apiKey = opts.apiKey;
+    this.model = opts.model;
+    this.protocol = opts.protocol ?? "chat";
+    this.label = opts.label ?? opts.id;
+    this.rawKey = this.protocol === "responses" ? "openai-responses" : "openai-chat";
   }
-  convert(system, messages) {
+  async post(path3, body, signal) {
+    const headers = { "Content-Type": "application/json" };
+    if (this.apiKey) headers.Authorization = `Bearer ${this.apiKey}`;
+    let res;
+    try {
+      res = await fetch(`${this.baseUrl}${path3}`, { method: "POST", headers, body: JSON.stringify(body), signal });
+    } catch (err) {
+      if (signal.aborted) throw err;
+      const m = err instanceof Error ? err.message : String(err);
+      const hint = /Failed to fetch/i.test(m) ? ' (network error \u2014 if this is a custom provider, press "Grant access" for its host in Settings)' : "";
+      throw new ProviderError(`Could not reach ${this.baseUrl}${hint}`);
+    }
+    if (!res.ok) throw await describeHttpError(res, this.label);
+    return res;
+  }
+  run(req) {
+    return this.protocol === "responses" ? this.runResponses(req) : this.runChat(req);
+  }
+  // ---- Chat Completions -----------------------------------------------------
+  toChatMessages(system, messages) {
     const out = [{ role: "system", content: system }];
     for (const m of messages) {
       if (m.role === "user") out.push({ role: "user", content: m.content });
       else if (m.role === "assistant") {
-        const raw = m.rawProvider === this.id ? m.raw : void 0;
+        const raw = m.rawProvider === "openai-chat" ? m.raw : void 0;
         const toolCalls = raw?.tool_calls ?? (m.toolCalls ?? []).map((c) => ({ id: c.id, type: "function", function: { name: c.name, arguments: JSON.stringify(c.input ?? {}) } }));
         const msg = { role: "assistant", content: raw?.content ?? m.content ?? "" };
         if (toolCalls.length) msg.tool_calls = toolCalls;
@@ -18708,47 +18783,16 @@ var OpenAICompatProvider = class {
     }
     return out;
   }
-  async run(req) {
-    const body = {
-      model: this.model,
-      messages: this.convert(req.system, req.messages),
-      stream: true
-    };
+  async runChat(req) {
+    const body = { model: this.model, messages: this.toChatMessages(req.system, req.messages), stream: true };
     if (req.tools.length) {
       body.tools = req.tools.map((t) => ({ type: "function", function: { name: t.name, description: t.description, parameters: t.input_schema } }));
     }
-    const headers = { "Content-Type": "application/json" };
-    if (this.apiKey) headers.Authorization = `Bearer ${this.apiKey}`;
-    let res;
-    try {
-      res = await fetch(`${this.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(body),
-        signal: req.signal
-      });
-    } catch (err) {
-      if (req.signal.aborted) throw err;
-      throw new ProviderError(`Could not reach ${this.baseUrl} (${err instanceof Error ? err.message : String(err)})`);
-    }
-    if (!res.ok) {
-      const txt = await res.text().catch(() => "");
-      let msg = txt.slice(0, 400);
-      try {
-        msg = JSON.parse(txt)?.error?.message ?? msg;
-      } catch {
-      }
-      if (res.status === 401) throw new ProviderError(`${this.id}: invalid API key (${msg})`);
-      throw new ProviderError(`${this.id} HTTP ${res.status}: ${msg}`, res.status === 429 || res.status >= 500);
-    }
-    if (!res.body) throw new ProviderError("Empty response body");
+    const res = await this.post("/chat/completions", body, req.signal);
     let text = "";
     const calls = /* @__PURE__ */ new Map();
     let finish;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
-    const handle = (json2) => {
+    await readSse(res, (json2) => {
       const choice = json2?.choices?.[0];
       if (!choice) return;
       const delta = choice.delta ?? choice.message ?? {};
@@ -18765,52 +18809,103 @@ var OpenAICompatProvider = class {
         calls.set(idx, cur);
       }
       if (choice.finish_reason) finish = choice.finish_reason;
-    };
-    for (; ; ) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      let nl;
-      while ((nl = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, nl).trim();
-        buf = buf.slice(nl + 1);
-        if (!line.startsWith("data:")) continue;
-        const data = line.slice(5).trim();
-        if (data === "[DONE]") continue;
-        try {
-          handle(JSON.parse(data));
-        } catch {
-        }
-      }
-    }
-    if (buf.trim().startsWith("{")) {
-      try {
-        handle(JSON.parse(buf));
-      } catch {
-      }
-    }
+    });
     const toolCalls = [];
     const rawCalls = [];
     let n = 0;
-    for (const c of [...calls.values()]) {
+    for (const c of calls.values()) {
       const id = c.id || `call_${Date.now()}_${n++}`;
-      let input = {};
-      try {
-        input = c.args ? JSON.parse(c.args) : {};
-      } catch {
-        input = { __invalid_json: c.args };
-      }
-      toolCalls.push({ id, name: c.name, input });
+      toolCalls.push({ id, name: c.name, input: parseArgs(c.args) });
       rawCalls.push({ id, type: "function", function: { name: c.name, arguments: c.args || "{}" } });
     }
-    let stop = "end";
-    if (toolCalls.length || finish === "tool_calls") stop = "tool_use";
-    else if (finish === "length") stop = "max_tokens";
-    else if (finish === "content_filter") stop = "refusal";
     const raw = { content: text, ...rawCalls.length ? { tool_calls: rawCalls } : {} };
-    return { text, toolCalls, stop, raw, model: this.model };
+    return { text, toolCalls, stop: stopFromFinish(finish, toolCalls.length), raw, model: this.model };
+  }
+  // ---- Responses API ---------------------------------------------------------
+  toResponsesInput(messages) {
+    const out = [];
+    for (const m of messages) {
+      if (m.role === "user") out.push({ role: "user", content: m.content });
+      else if (m.role === "assistant") {
+        const raw = m.rawProvider === "openai-responses" && Array.isArray(m.raw) ? m.raw : void 0;
+        if (raw?.length) {
+          out.push(...raw);
+          continue;
+        }
+        if (m.content.trim()) out.push({ role: "assistant", content: [{ type: "output_text", text: m.content }] });
+        for (const c of m.toolCalls ?? []) out.push({ type: "function_call", call_id: c.id, name: c.name, arguments: JSON.stringify(c.input ?? {}) });
+      } else {
+        for (const r of m.results) out.push({ type: "function_call_output", call_id: r.id, output: r.content });
+      }
+    }
+    return out;
+  }
+  async runResponses(req) {
+    const body = { model: this.model, instructions: req.system, input: this.toResponsesInput(req.messages), stream: true };
+    if (req.tools.length) {
+      body.tools = req.tools.map((t) => ({ type: "function", name: t.name, description: t.description, parameters: t.input_schema }));
+    }
+    const res = await this.post("/responses", body, req.signal);
+    let streamedText = "";
+    let finalResponse = null;
+    let failure;
+    await readSse(res, (ev) => {
+      switch (ev?.type) {
+        case "response.output_text.delta":
+          if (typeof ev.delta === "string") {
+            streamedText += ev.delta;
+            req.onText(ev.delta);
+          }
+          break;
+        case "response.completed":
+        case "response.incomplete":
+          finalResponse = ev.response ?? null;
+          break;
+        case "response.failed":
+          failure = ev.response?.error?.message ?? "response failed";
+          break;
+        case "error":
+          failure = ev.error?.message ?? ev.message ?? "stream error";
+          break;
+      }
+    });
+    if (failure) throw new ProviderError(`${this.label}: ${failure}`);
+    const output = Array.isArray(finalResponse?.output) ? finalResponse.output : [];
+    let text = "";
+    const toolCalls = [];
+    const raw = [];
+    for (const item of output) {
+      if (item?.type === "message") {
+        const t = (item.content ?? []).filter((c) => c?.type === "output_text").map((c) => c.text ?? "").join("");
+        text += t;
+        raw.push({ role: "assistant", content: [{ type: "output_text", text: t }] });
+      } else if (item?.type === "function_call") {
+        const callId = item.call_id ?? item.id ?? `call_${Date.now()}_${toolCalls.length}`;
+        toolCalls.push({ id: callId, name: item.name, input: parseArgs(item.arguments) });
+        raw.push({ type: "function_call", call_id: callId, name: item.name, arguments: item.arguments ?? "{}" });
+      }
+    }
+    if (!output.length) text = streamedText;
+    let stop = toolCalls.length ? "tool_use" : "end";
+    if (finalResponse?.status === "incomplete" && finalResponse?.incomplete_details?.reason === "max_output_tokens") stop = "max_tokens";
+    if (finalResponse?.status === "incomplete" && finalResponse?.incomplete_details?.reason === "content_filter") stop = "refusal";
+    return { text, toolCalls, stop, raw, model: finalResponse?.model ?? this.model };
   }
 };
+function parseArgs(args) {
+  if (!args) return {};
+  try {
+    return JSON.parse(args);
+  } catch {
+    return { __invalid_json: args };
+  }
+}
+function stopFromFinish(finish, calls) {
+  if (calls || finish === "tool_calls") return "tool_use";
+  if (finish === "length") return "max_tokens";
+  if (finish === "content_filter") return "refusal";
+  return "end";
+}
 
 // src/background/providers/index.ts
 function createProvider(s) {
@@ -18820,12 +18915,25 @@ function createProvider(s) {
       return new AnthropicProvider(s.anthropicApiKey, s.anthropicModel || "claude-opus-5-5", s.effort);
     case "openai":
       if (!s.openaiApiKey) throw new ProviderError("OpenAI API key is missing \u2014 add it in Settings.");
-      return new OpenAICompatProvider("openai", s.openaiBaseUrl || "https://api.openai.com/v1", s.openaiApiKey, s.openaiModel);
+      return new OpenAICompatProvider({ id: "openai", baseUrl: s.openaiBaseUrl || "https://api.openai.com/v1", apiKey: s.openaiApiKey, model: s.openaiModel, label: "OpenAI" });
     case "gemini":
       if (!s.geminiApiKey) throw new ProviderError("Gemini API key is missing \u2014 add it in Settings.");
-      return new OpenAICompatProvider("gemini", "https://generativelanguage.googleapis.com/v1beta/openai", s.geminiApiKey, s.geminiModel);
+      return new OpenAICompatProvider({
+        id: "gemini",
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
+        apiKey: s.geminiApiKey,
+        model: s.geminiModel,
+        label: "Gemini"
+      });
     case "ollama":
-      return new OpenAICompatProvider("ollama", s.ollamaBaseUrl || "http://localhost:11434/v1", "", s.ollamaModel);
+      return new OpenAICompatProvider({ id: "ollama", baseUrl: s.ollamaBaseUrl || "http://localhost:11434/v1", apiKey: "", model: s.ollamaModel, label: "Ollama" });
+    case "custom": {
+      const p = activeCustomProvider(s);
+      if (!p) throw new ProviderError("No custom provider is configured \u2014 add one in Settings \u2192 Custom providers.");
+      if (!p.baseUrl) throw new ProviderError(`Custom provider "${p.name}": base URL is missing.`);
+      if (!p.model) throw new ProviderError(`Custom provider "${p.name}": model name is missing.`);
+      return new OpenAICompatProvider({ id: "custom", baseUrl: p.baseUrl, apiKey: p.apiKey, model: p.model, protocol: p.protocol, label: p.name || "Custom provider" });
+    }
   }
 }
 
@@ -19365,7 +19473,7 @@ async function runAgent(run) {
       content: result.text,
       toolCalls: result.toolCalls.length ? result.toolCalls : void 0,
       raw: result.raw,
-      rawProvider: provider.id,
+      rawProvider: provider.rawKey,
       rawModel: result.model ?? provider.model
     };
     messages.push(assistant);
@@ -19509,6 +19617,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return reply(loadSettings().then((s) => nativeWhich(s.nativeHostName, msg.name)));
     case "testProvider":
       return reply(testProvider());
+    case "fetchModels":
+      return reply(fetchModels(msg.baseUrl, msg.apiKey));
     case "pageContextSummary":
       return reply(Promise.all([getPageContext(msg.tabId), loadSettings()]).then(([ctx, s]) => ({ summary: contextSummary(ctx, s), kind: ctx?.kind ?? "other" })));
   }
@@ -19523,6 +19633,35 @@ async function openPanel(tabId, action) {
     port.postMessage({ type: "run_action", action });
   }
   await chrome.sidePanel.open({ tabId });
+}
+async function fetchModels(baseUrl, apiKey) {
+  const base = baseUrl.trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//.test(base)) throw new Error("Base URL must start with http(s)://");
+  const headers = {};
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+  let res;
+  try {
+    res = await fetch(`${base}/models`, { headers });
+  } catch (err) {
+    throw new Error(`Could not reach ${base}/models (${err instanceof Error ? err.message : String(err)}). Press "Grant access" first.`);
+  }
+  const text = await res.text();
+  if (!res.ok) {
+    let msg = text.slice(0, 300);
+    try {
+      msg = JSON.parse(text)?.error?.message ?? msg;
+    } catch {
+    }
+    throw new Error(`HTTP ${res.status}: ${msg}`);
+  }
+  let json2 = {};
+  try {
+    json2 = JSON.parse(text);
+  } catch {
+    throw new Error("The /models endpoint did not return JSON \u2014 check the base URL (it should end with /v1).");
+  }
+  const list = (json2.data ?? json2.models ?? []).map((m) => m.id ?? m.name ?? "").filter(Boolean);
+  return { models: [...new Set(list)].sort() };
 }
 async function testProvider() {
   try {

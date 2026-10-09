@@ -25,6 +25,8 @@
     geminiModel: "gemini-2.5-pro",
     ollamaBaseUrl: "http://localhost:11434/v1",
     ollamaModel: "llama3.1",
+    customProviders: [],
+    activeCustomProviderId: "",
     effort: "medium",
     youtubeApiKey: "",
     showOverlay: true,

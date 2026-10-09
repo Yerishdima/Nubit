@@ -87,7 +87,7 @@ test('OpenAICompatProvider parses a streamed tool call', async () => {
     return new Response(stream, { status: 200 });
   }) as typeof fetch;
   try {
-    const p = new OpenAICompatProvider('openai', 'https://api.openai.com/v1', 'k', 'gpt-test');
+    const p = new OpenAICompatProvider({ id: 'openai', baseUrl: 'https://api.openai.com/v1', apiKey: 'k', model: 'gpt-test' });
     let streamed = '';
     const r = await p.run({
       system: 'sys',
@@ -102,6 +102,69 @@ test('OpenAICompatProvider parses a streamed tool call', async () => {
     const body = JSON.parse(sentBody!);
     assert.equal(body.messages[0].role, 'system');
     assert.equal(body.tools[0].function.name, 'search_youtube');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+test('OpenAICompatProvider (Responses API) streams text and collects function calls', async () => {
+  const chunks = [
+    'event: response.created\ndata: {"type":"response.created","response":{"id":"r1"}}\n\n',
+    'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"Searching "}\n\n',
+    'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"now."}\n\n',
+    'event: response.output_item.added\ndata: {"type":"response.output_item.added","item":{"type":"function_call","id":"fc_1","call_id":"call_9","name":"search_youtube","arguments":""}}\n\n',
+    'event: response.function_call_arguments.delta\ndata: {"type":"response.function_call_arguments.delta","item_id":"fc_1","delta":"{\\"query\\":\\"dogs\\"}"}\n\n',
+    'event: response.completed\ndata: {"type":"response.completed","response":{"id":"r1","status":"completed","model":"atlas-model","output":[{"type":"reasoning","id":"rs_1","summary":[]},{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Searching now."}]},{"type":"function_call","id":"fc_1","call_id":"call_9","name":"search_youtube","arguments":"{\\"query\\":\\"dogs\\"}"}]}}\n\n',
+  ];
+  const origFetch = globalThis.fetch;
+  let sentUrl = '';
+  let sentBody: string | undefined;
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    sentUrl = String(url);
+    sentBody = String(init.body);
+    const stream = new ReadableStream({
+      start(controller) {
+        for (const c of chunks) controller.enqueue(new TextEncoder().encode(c));
+        controller.close();
+      },
+    });
+    return new Response(stream, { status: 200 });
+  }) as typeof fetch;
+  try {
+    const p = new OpenAICompatProvider({ id: 'custom', baseUrl: 'https://aiberloga.website/v1/', apiKey: 'k', model: 'atlas-model', protocol: 'responses', label: 'Atlas' });
+    let streamed = '';
+    const history: ChatMessage[] = [
+      { role: 'user', content: 'first' },
+      { role: 'assistant', content: 'ok', raw: [{ role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] }], rawProvider: 'openai-responses' },
+      { role: 'user', content: 'find dogs' },
+    ];
+    const r = await p.run({
+      system: 'sys',
+      messages: history,
+      tools: [{ name: 'search_youtube', description: 'd', input_schema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] } }],
+      onText: (d) => (streamed += d),
+      signal: new AbortController().signal,
+    });
+    assert.equal(sentUrl, 'https://aiberloga.website/v1/responses');
+    assert.equal(streamed, 'Searching now.');
+    assert.equal(r.text, 'Searching now.');
+    assert.equal(r.stop, 'tool_use');
+    assert.equal(r.model, 'atlas-model');
+    assert.deepEqual(r.toolCalls, [{ id: 'call_9', name: 'search_youtube', input: { query: 'dogs' } }]);
+    // raw replay items: message + function_call, no reasoning / ids
+    assert.deepEqual(r.raw, [
+      { role: 'assistant', content: [{ type: 'output_text', text: 'Searching now.' }] },
+      { type: 'function_call', call_id: 'call_9', name: 'search_youtube', arguments: '{"query":"dogs"}' },
+    ]);
+    const body = JSON.parse(sentBody!);
+    assert.equal(body.instructions, 'sys');
+    assert.equal(body.tools[0].name, 'search_youtube');
+    assert.deepEqual(body.input[1], { role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] });
+    // a tool result turn is converted into function_call_output
+    const p2 = new OpenAICompatProvider({ id: 'custom', baseUrl: 'https://x/v1', apiKey: '', model: 'm', protocol: 'responses' });
+    await p2.run({ system: 's', messages: [{ role: 'user', content: 'u' }, { role: 'assistant', content: '', toolCalls: r.toolCalls, raw: r.raw, rawProvider: 'openai-responses' }, { role: 'tool', results: [{ id: 'call_9', name: 'search_youtube', content: '{"ok":1}' }] }], tools: [], onText: () => undefined, signal: new AbortController().signal });
+    const body2 = JSON.parse(sentBody!);
+    assert.deepEqual(body2.input.at(-1), { type: 'function_call_output', call_id: 'call_9', output: '{"ok":1}' });
   } finally {
     globalThis.fetch = origFetch;
   }

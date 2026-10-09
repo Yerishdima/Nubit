@@ -53,6 +53,7 @@ export function toAnthropicMessages(messages: ChatMessage[], model: string): Bet
 
 export class AnthropicProvider implements Provider {
   readonly id = 'anthropic' as const;
+  readonly rawKey = 'anthropic';
   readonly model: string;
   private readonly effort: Effort;
   private readonly client: Anthropic;

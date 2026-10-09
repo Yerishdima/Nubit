@@ -29,6 +29,7 @@
           <option value="openai">OpenAI (GPT)</option>
           <option value="gemini">Google Gemini</option>
           <option value="ollama">Ollama (local)</option>
+          <!-- custom providers are appended by options.js -->
         </select>
       </div>
 
@@ -52,6 +53,15 @@
         <div class="row"><label for="ollamaBaseUrl">Ollama URL</label><input id="ollamaBaseUrl" /></div>
         <div class="row"><label for="ollamaModel" id="lbl-model-l"></label><input id="ollamaModel" /></div>
         <p class="hint" id="hint-ollama"></p>
+      </div>
+
+      <div class="prov" data-prov="custom">
+        <p class="hint" id="hint-custom"></p>
+        <div id="custom-providers"></div>
+      </div>
+      <div class="row-actions">
+        <button id="add-provider" class="btn small"></button>
+        <button id="add-atlas" class="btn small">+ Atlas API</button>
       </div>
 
       <div class="row"><label for="effort" id="lbl-effort"></label>
